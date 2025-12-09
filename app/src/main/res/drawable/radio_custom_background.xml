@@ -1,0 +1,17 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 선택 상태 -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF6A00"/> <!-- 선택된 주황색 -->
+            <corners android:radius="@dimen/dimen_16"/>
+        </shape>
+    </item>
+    <!-- 미선택 상태 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F0F0F0"/> <!-- 회색 배경 -->
+            <stroke android:width="1dp" android:color="#F0F0F0"/> <!-- 테두리 -->
+            <corners android:radius="@dimen/dimen_16"/>
+        </shape>
+    </item>
+</selector>

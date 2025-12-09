@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/dimen_820"
+    android:layout_height="@dimen/dimen_816"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:elevation="@dimen/dimen_80"
+    android:background="@drawable/popup_background_16radius">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dimen_488"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_content_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/theather_image_gradient"/>
+    </FrameLayout>
+
+    
+    <ScrollView
+        android:id="@+id/sr_view"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dimen_316"
+        android:layout_marginTop="@dimen/dimen_343"
+        app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/string_36sp"/>
+
+            <TextView
+                android:id="@+id/tvInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/string_28sp"/>
+
+            <TextView
+                android:id="@+id/tvSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/string_28sp"/>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="@dimen/dimen_64"
+        android:layout_marginBottom="@dimen/dimen_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        >
+
+        <ImageButton
+            android:id="@+id/bt_disney"
+            android:layout_width="@dimen/dimen_228"
+            android:layout_height="@dimen/dimen_106"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:background="@drawable/button_background_8radius"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:src="@drawable/disney"/>
+
+        <ImageButton
+            android:id="@+id/bt_netflix"
+            android:layout_width="@dimen/dimen_228"
+            android:layout_height="@dimen/dimen_106"
+            android:layout_marginStart="@dimen/dimen_15"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:background="@drawable/button_background_8radius"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/bt_disney"
+            android:src="@drawable/netflix"/>
+
+        <ImageButton
+            android:id="@+id/bt_hulu"
+            android:layout_width="@dimen/dimen_228"
+            android:layout_height="@dimen/dimen_106"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/dimen_15"
+            android:background="@drawable/button_background_8radius"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/bt_netflix"
+            android:src="@drawable/hulu_logo"
+            android:visibility="gone"/>
+
+        <ImageButton
+            android:id="@+id/bt_prime_video"
+            android:layout_width="@dimen/dimen_228"
+            android:layout_height="@dimen/dimen_106"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/dimen_15"
+            android:visibility="gone"
+            android:background="@drawable/button_background_8radius"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/bt_hulu"
+            android:src="@drawable/prime_video"/>
+
+
+        <ImageButton
+            android:id="@+id/bt_paramount_video"
+            android:layout_width="@dimen/dimen_228"
+            android:layout_height="@dimen/dimen_106"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/dimen_15"
+            android:visibility="gone"
+            android:background="@drawable/button_background_8radius"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/bt_prime_video"
+            android:src="@drawable/logo_paramount_light"/>
+
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/dimen_8">
+
+    <!-- 썸네일 (가로 긴 이미지) -->
+    <ImageView
+        android:id="@+id/videoThumbnail"
+        android:layout_width="@dimen/dimen_343"
+        android:layout_height="@dimen/dimen_210"
+        android:scaleType="centerCrop"
+        android:background="@android:color/darker_gray" />
+
+</LinearLayout>

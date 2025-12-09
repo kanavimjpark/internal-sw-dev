@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/dimen_614"
+    android:layout_height="@dimen/dimen_216"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/widget_background">
+
+    <ImageView
+        android:id="@+id/album"
+        android:layout_width="@dimen/dimen_88"
+        android:layout_height="@dimen/dimen_88"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="@dimen/dimen_24"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="@dimen/dimen_19"
+        android:src="@drawable/albumart"/>
+
+
+    <TextView
+    android:id="@+id/tv_song"
+    android:textStyle="bold"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textSize="@dimen/string_24sp"
+    app:layout_constraintStart_toEndOf="@+id/album"
+    android:layout_marginTop="@dimen/dimen_19"
+    android:layout_marginStart="@dimen/dimen_16"
+    android:textColor="@color/c_1D1D1D"
+    app:layout_constraintTop_toTopOf="parent"
+    android:text="@string/music_song"/>
+
+    <TextView
+        android:id="@+id/tv_artist"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/string_24sp"
+        android:layout_marginStart="@dimen/dimen_16"
+        android:textColor="@color/c_555555"
+        app:layout_constraintTop_toBottomOf="@+id/tv_song"
+        app:layout_constraintStart_toEndOf="@+id/album"
+        android:text="@string/music_artist"/>
+
+
+    <LinearLayout
+        android:layout_width="@dimen/dimen_116"
+        android:layout_height="@dimen/dimen_88"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:backgroundTint="@color/c_F8F8F8"
+        android:paddingLeft="@dimen/dimen_24"
+        android:paddingEnd="@dimen/dimen_21"
+        android:gravity="center_vertical"
+        android:layout_marginEnd="@dimen/dimen_24"
+        android:layout_marginTop="@dimen/dimen_19"
+        android:background="@drawable/widget_background_16radius"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="@dimen/dimen_40"
+            android:layout_height="40dp"
+            android:src="@drawable/usbapp"/>
+        <ImageView
+            android:layout_width="@dimen/dimen_20"
+            android:layout_height="@dimen/dimen_20"
+            android:layout_marginStart="@dimen/dimen_14"
+            android:src="@drawable/arrow_b"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bt_rewind"
+        android:layout_width="@dimen/dimen_80"
+        android:layout_height="@dimen/dimen_70"
+        android:orientation="horizontal"
+        android:layout_marginBottom="@dimen/dimen_21"
+        android:layout_marginStart="@dimen/dimen_24"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+        <ImageView
+            android:layout_width="@dimen/dimen_40"
+            android:layout_height="@dimen/dimen_40"
+            android:src="@drawable/rewind"/>
+    </LinearLayout>
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/bt_rewind"-->
+<!--        android:layout_width="@dimen/dimen_80"-->
+<!--        android:layout_height="@dimen/dimen_70"-->
+<!--        android:src="@drawable/rewind"-->
+<!--        android:layout_marginBottom="@dimen/dimen_21"-->
+<!--        android:layout_marginStart="@dimen/dimen_24"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        android:scaleType="fitCenter"-->
+<!--        android:background="@color/c_E4E4E4"/>-->
+    <LinearLayout
+        android:id="@+id/bt_play"
+        android:layout_width="@dimen/dimen_80"
+        android:layout_height="@dimen/dimen_70"
+        android:orientation="horizontal"
+        android:layout_marginBottom="@dimen/dimen_21"
+        android:layout_marginStart="@dimen/dimen_80"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/bt_rewind">
+        <ImageView
+            android:layout_width="@dimen/dimen_40"
+            android:layout_height="@dimen/dimen_40"
+            android:src="@drawable/play"/>
+    </LinearLayout>
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/bt_play"-->
+<!--        android:layout_width="@dimen/dimen_80"-->
+<!--        android:layout_height="@dimen/dimen_70"-->
+<!--        android:src="@drawable/play"-->
+<!--        android:layout_marginBottom="@dimen/dimen_21"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        android:background="@color/c_E4E4E4"-->
+<!--        android:layout_marginStart="@dimen/dimen_80"-->
+<!--        android:scaleType="fitCenter"-->
+<!--        app:layout_constraintStart_toEndOf="@+id/bt_rewind" />-->
+
+    <LinearLayout
+        android:id="@+id/bt_forward"
+        android:layout_width="@dimen/dimen_80"
+        android:layout_height="@dimen/dimen_70"
+        android:orientation="horizontal"
+        android:layout_marginBottom="@dimen/dimen_21"
+        android:layout_marginStart="@dimen/dimen_80"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/bt_play">
+        <ImageView
+            android:layout_width="@dimen/dimen_40"
+            android:layout_height="@dimen/dimen_40"
+            android:src="@drawable/forward"/>
+    </LinearLayout>
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/bt_forward"-->
+<!--        android:layout_width="@dimen/dimen_80"-->
+<!--        android:layout_height="@dimen/dimen_70"-->
+<!--        android:src="@drawable/forward"-->
+<!--        android:layout_marginBottom="@dimen/dimen_21"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        android:background="@color/c_E4E4E4"-->
+<!--        android:layout_marginStart="@dimen/dimen_80"-->
+<!--        android:scaleType="fitCenter"-->
+<!--        app:layout_constraintStart_toEndOf="@+id/bt_play" />-->
+
+    <LinearLayout
+        android:id="@+id/bt_list"
+        android:layout_width="@dimen/dimen_80"
+        android:layout_height="@dimen/dimen_70"
+        android:orientation="horizontal"
+        android:layout_marginBottom="@dimen/dimen_21"
+        android:layout_marginEnd="@dimen/dimen_24"
+        android:layout_marginStart="@dimen/dimen_80"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/bt_forward"
+        app:layout_constraintEnd_toEndOf="parent">
+        <ImageView
+            android:layout_width="@dimen/dimen_40"
+            android:layout_height="@dimen/dimen_40"
+            android:src="@drawable/list"/>
+    </LinearLayout>
+<!--<ImageButton-->
+<!--    android:layout_width="@dimen/dimen_80"-->
+<!--    android:layout_height="@dimen/dimen_70"-->
+<!--    app:layout_constraintEnd_toEndOf="parent"-->
+<!--    android:layout_marginBottom="@dimen/dimen_21"-->
+<!--    android:src="@drawable/list"-->
+<!--    app:layout_constraintBottom_toBottomOf="parent"-->
+<!--    android:layout_marginStart="@dimen/dimen_80"-->
+<!--    android:layout_marginEnd="@dimen/dimen_24"-->
+<!--    android:background="@color/c_E4E4E4"-->
+<!--    android:scaleType="fitCenter"-->
+<!--    app:layout_constraintStart_toEndOf="@+id/bt_forward" />-->
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

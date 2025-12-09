@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">3DModelSample</string>
+    <string name="home">Home</string>
+    <string name="navi">NAVIGATION</string>
+    <string name="work">Work</string>
+    <string name="Manual">Manual</string>
+    <string name="Manual_text">How to Use and Drive</string>
+    <string name="music_song">Music Title Music title</string>
+    <string name="music_artist">Artist Name</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="Settings">Settings</string>
+    <string name="Connections">Connections</string>
+    <string name="System">System</string>
+    <string name="Sound">Sound</string>
+    <string name="Display">Display</string>
+    <string name="Vehicle">Vehicle</string>
+    <string name="ExteriorLight">Exterior Light</string>
+    <string name="VoiceControl">Voice Control</string>
+    <string name="all">All</string>
+    <string name="disney">Disney+</string>
+    <string name="netflix">Netflix</string>
+    <string name="hulu">HULU</string>
+    <string name="amazon">Amazon Prime Video</string>
+</resources>

@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container_weather"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/snowing">
+
+    <LinearLayout
+        android:layout_width="1200dp"
+        android:layout_height="match_parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:paddingHorizontal="@dimen/dimen_96"
+        android:paddingTop="80dp"
+        >
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="30dp">
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/navi_2"
+                    />
+                <TextView
+                    android:text="Seoul, Korea"
+                    android:textSize="36sp"
+                    android:textColor="@color/gray_90"
+                    android:gravity="center_horizontal"
+                    android:textStyle="bold"
+                    android:layout_width="522dp"
+                    android:layout_height="50dp"
+                    android:layout_marginBottom="@dimen/dimen_96"/>
+
+            </LinearLayout>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="1008dp"
+                android:layout_height="244dp"
+                android:paddingLeft="24dp">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="493dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="31dp">
+                        <LinearLayout
+                            android:id="@+id/lv_humidity"
+                            android:orientation="vertical"
+                            android:layout_width="200dp"
+                            android:layout_height="106dp">
+
+                            <TextView
+                                android:text="Humidity "
+                                android:textSize="32sp"
+                                android:textColor="@color/gray_80"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="@dimen/dimen_16"/>
+
+                            <LinearLayout
+                                android:orientation="horizontal"
+                                android:layout_width="200dp"
+                                android:layout_height="45dp">
+
+                                <ImageView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/humidity"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="@dimen/dimen_12"/>
+
+                                <TextView
+                                    android:id="@+id/tv_humidity_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="32sp"
+                                    android:textColor="@color/white"
+                                    android:text=" 76 %" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:id="@+id/lv_pressure"
+                            android:orientation="vertical"
+                            android:layout_marginStart="28dp"
+                            android:layout_width="200dp"
+                            android:layout_height="106dp">
+
+                            <TextView
+                                android:text="Pressure"
+                                android:textSize="32sp"
+                                android:textColor="@color/gray_80"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="@dimen/dimen_16"/>
+
+                            <LinearLayout
+                                android:orientation="horizontal"
+                                android:layout_width="200dp"
+                                android:layout_height="45dp">
+
+                                <ImageView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/pressure"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="@dimen/dimen_12"/>
+
+                                <TextView
+                                    android:id="@+id/tv_pressure_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="32sp"
+                                    android:textColor="@color/white"
+                                    android:text=" 18 Mm" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="493dp"
+                        android:layout_height="wrap_content">
+                        <LinearLayout
+                            android:id="@+id/lv_wind"
+                            android:orientation="vertical"
+                            android:layout_width="200dp"
+                            android:layout_height="106dp">
+
+                            <TextView
+                                android:text="Wind"
+                                android:textSize="32sp"
+                                android:textColor="@color/gray_80"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="@dimen/dimen_16"/>
+
+                            <LinearLayout
+                                android:orientation="horizontal"
+                                android:layout_width="200dp"
+                                android:layout_height="45dp">
+
+                                <ImageView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/wind"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="@dimen/dimen_12"/>
+
+                                <TextView
+                                    android:id="@+id/tv_wind_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="32sp"
+                                    android:textColor="@color/white"
+                                    android:text="80 M/S" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+                        <LinearLayout
+                            android:id="@+id/lv_precipitation"
+                            android:orientation="vertical"
+                            android:layout_width="200dp"
+                            android:layout_height="106dp"
+                            android:layout_marginStart="28dp">
+
+                            <TextView
+                                android:text="Precipitation"
+                                android:textSize="32sp"
+                                android:textColor="@color/gray_80"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="@dimen/dimen_16"/>
+
+                            <LinearLayout
+                                android:orientation="horizontal"
+                                android:layout_width="200dp"
+                                android:layout_height="45dp">
+
+                                <ImageView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/raindrop"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="@dimen/dimen_12"/>
+
+                                <TextView
+                                    android:id="@+id/tv_precipitatino_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="32sp"
+                                    android:textColor="@color/white"
+                                    android:text=" 98 %" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="491dp"
+                    android:layout_height="244dp">
+                    <TextView
+                        android:id="@+id/tv_degree"
+                        android:text="22°c"
+                        android:textSize="128sp"
+                        android:textColor="@color/gray_90"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:layout_width="491dp"
+                        android:layout_height="244dp" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="1008dp"
+                android:layout_height="370dp"
+                android:background="@drawable/radius24"
+                android:layout_marginTop="@dimen/dimen_64">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_3hDiff"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:itemCount="7"
+                    android:paddingTop="@dimen/dimen_36"
+                    android:paddingEnd="@dimen/dimen_32"
+                    tools:listitem="@layout/item_temp_graph"/>
+
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/lv_forecast"
+        android:orientation="vertical"
+        android:layout_width="720dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1000dp"
+        android:layout_marginTop="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@color/alpha"
+        android:paddingLeft="80dp"
+        android:paddingTop="96dp"
+        android:paddingRight="96dp"
+        android:paddingBottom="10dp">
+        <LinearLayout
+            android:layout_width="528dp"
+            android:layout_height="88dp"
+            android:paddingTop="@dimen/dimen_24">
+            <TextView
+                android:text="7 day forecast"
+                android:textSize="32sp"
+                android:textColor="@color/white_70a"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+        </LinearLayout>
+        <View
+            android:id="@+id/line_start"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/white_70a"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_weather"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:itemCount="6"
+            tools:listitem="@layout/item_weather_forecast"/>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

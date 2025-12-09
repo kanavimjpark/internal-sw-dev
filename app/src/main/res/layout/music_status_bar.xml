@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/music_status_bar"
+    android:layout_width="@dimen/dimen_1468"
+    android:layout_height="@dimen/dimen_112"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/widget_background_16radius">
+    
+    <ImageView
+        android:id="@+id/iv_playing_music_image"
+        android:layout_width="@dimen/dimen_72"
+        android:layout_height="@dimen/dimen_72"
+        android:src="@drawable/song_noimg_light"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginLeft="@dimen/dimen_24"/>
+
+    <TextView
+        android:id="@+id/playing_song_title"
+        android:layout_width="@dimen/dimen_820"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/string_28sp"
+        android:text="Nothing is playing"
+        android:textColor="@color/c_1D1D1D"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginLeft="@dimen/dimen_16"
+        app:layout_constraintLeft_toRightOf="@+id/iv_playing_music_image"/>
+    
+    
+    <LinearLayout
+        android:id="@+id/left"
+        android:layout_width="@dimen/dimen_112"
+        android:layout_height="@dimen/dimen_70"
+        android:layout_marginLeft="@dimen/dimen_16"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/playing_song_title">
+        
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/left"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/play"
+        android:layout_width="@dimen/dimen_112"
+        android:layout_height="@dimen/dimen_70"
+        android:layout_marginLeft="@dimen/dimen_16"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/left">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/play_status_bar"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/right"
+        android:layout_width="@dimen/dimen_112"
+        android:layout_height="@dimen/dimen_70"
+        android:layout_marginLeft="@dimen/dimen_16"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/play">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/right"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/mute"
+        android:layout_width="@dimen/dimen_112"
+        android:layout_height="@dimen/dimen_70"
+        android:layout_marginLeft="@dimen/dimen_16"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/right">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/iconbuttons_squre_light"/>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

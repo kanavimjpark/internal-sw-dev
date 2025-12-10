@@ -2,22 +2,17 @@ package com.example.a3dmodelsample
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.graphics.PixelFormat
-import android.location.GnssAntennaInfo.PhaseCenterOffset
 import android.os.Bundle
-import android.text.Layout
-import android.opengl.Matrix
 import android.content.res.Resources
 import android.util.Log
 import android.view.Choreographer
+import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.animation.LinearInterpolator
-
-import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -27,17 +22,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
-
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.a3dmodelsample.retrofit.MainViewModelFactory
-import com.example.a3dmodelsample.retrofit.NewsApiClient
 import com.example.a3dmodelsample.retrofit.NewsRepository
 import com.example.a3dmodelsample.retrofit.RetrofitClient
 import com.example.a3dmodelsample.retrofit.TickerWsClient
-import com.example.a3dmodelsample.retrofit.WeatherApiClient
 import com.example.a3dmodelsample.retrofit.WeatherRepository
 import com.example.a3dmodelsample.viewmodel.MainViewModel
 import com.google.android.filament.utils.KTX1Loader
@@ -45,15 +37,7 @@ import com.google.android.filament.utils.ModelViewer
 import java.nio.ByteBuffer
 import com.google.android.filament.Camera
 import com.google.android.filament.EntityManager
-import com.google.android.filament.LightManager
-import com.google.android.filament.View
-import com.google.android.filament.utils.Float3
 import com.google.android.filament.utils.Mat4
-import com.google.android.filament.utils.rotation
-import com.google.android.filament.TransformManager
-import com.google.android.filament.gltfio.Animator
-import java.io.ByteArrayOutputStream
-import com.google.android.filament.utils.Manipulator
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -64,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mainViewModel: MainViewModel
 
     // UI components
-    private lateinit var carLiftSurfaceView: SurfaceView
+    private lateinit var surfaceView: SurfaceView
     //for testing stock info
     private lateinit var tvTitle: TextView
 
@@ -75,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnDoorFrontLeftTransp: ImageButton
     // Filament ModelViewer & Choreographer
     private lateinit var choreographer: Choreographer
-    private lateinit var carLiftModelViewer: ModelViewer
+    private lateinit var modelViewer: ModelViewer
     private lateinit var tickerWsClient: TickerWsClient
 
     // Animation control variables
@@ -85,25 +69,19 @@ class MainActivity : AppCompatActivity() {
     private var loopAnimation = false
     private var isAnimationPlaying = false
 
-    // Animation indexes (hardcoded)
-    private val ANIM_DOWN = 0
-    private val ANIM_TURN = 1
-    private val ANIM_REAR_LEFT = 2
-    private val ANIM_REAR_RIGHT = 3
-    private val ANIM_FRONT_LEFT = 4
-    private val ANIM_FRONT_RIGHT = 5
-
     private lateinit var camera: Camera
     private var cameraEntity: Int = 0
 
     private var currentAngle = 0f
     private var radius = 6.0f  // 기본 줌 거리
     private var angleDegree = 0
-    private var isRendering = false
+    private var currentPitch = 40f
 
     private val NEWS_API_KEY = "dd07ab437c704c74babae5f73df37976"
     private val WEATHER_API_KEY = "16b7d1ccd4c3e4f4f42e2051cb5fe5dd"
 
+    private lateinit var gestureDetector: GestureDetector
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
 
     // Frame callback for animation update
     private val frameCallback = object : Choreographer.FrameCallback {
@@ -114,7 +92,7 @@ class MainActivity : AppCompatActivity() {
             if (isAnimationPlaying) {
                 val elapsedSeconds = (currentTime - carLiftAnimationStartTime).toDouble() / 1_000_000_000
 
-                carLiftModelViewer.animator?.apply {
+                modelViewer.animator?.apply {
                     if (animationCount > 0) {
                         val duration = getAnimationDuration(carLiftAnimationIndex)
                         if (duration != 0f) {
@@ -132,16 +110,16 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            carLiftModelViewer.render(currentTime)
+            modelViewer.render(currentTime)
         }
 
         private fun Int.getTransform(): Mat4 {
-            val tm = carLiftModelViewer.engine.transformManager
+            val tm = modelViewer.engine.transformManager
             return Mat4.of(*tm.getTransform(tm.getInstance(this), null as FloatArray?))
         }
 
         private fun Int.setTransform(mat: Mat4) {
-            val tm = carLiftModelViewer.engine.transformManager
+            val tm = modelViewer.engine.transformManager
             tm.setTransform(tm.getInstance(this), mat.toFloatArray())
         }
     }
@@ -245,7 +223,7 @@ class MainActivity : AppCompatActivity() {
 
 
         // Bind views
-        carLiftSurfaceView = findViewById(R.id.carLiftSurfaceView)
+        surfaceView = findViewById(R.id.surfaceView)
         tvTitle = findViewById(R.id.tv_title)
         btnMedia = findViewById(R.id.bt_list)
         btnSetting = findViewById(R.id.manual_widget)
@@ -270,7 +248,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, SettingActivity::class.java)
             startActivity(intent) }
 
-        carLiftSurfaceView.holder.addCallback(object : SurfaceHolder.Callback {
+        surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
                 initModelViewer() // 이 안에서 Filament 엔진 및 GLB 로딩 시작
             }
@@ -284,14 +262,21 @@ class MainActivity : AppCompatActivity() {
     private fun initModelViewer() {
         choreographer = Choreographer.getInstance()
 
-        carLiftModelViewer = ModelViewer(carLiftSurfaceView)
+        modelViewer = ModelViewer(surfaceView)
+
+        gestureDetector = GestureDetector(this, GestureListener())
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
         cameraEntity = EntityManager.get().create()
-        camera = carLiftModelViewer.engine.createCamera(cameraEntity)
+        camera = modelViewer.engine.createCamera(cameraEntity)
         camera.setProjection(100.0, 1280.0 / 720.0, 0.9, 100.0, Camera.Fov.HORIZONTAL) // 종횡비는 화면 비율에 맞게 조정
-        carLiftModelViewer.view.camera = camera
-        carLiftSurfaceView.setOnTouchListener(carLiftModelViewer)
-        turnLeftCameraAngle()
+        modelViewer.view.camera = camera
+        surfaceView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            scaleGestureDetector.onTouchEvent(event)
+            true
+        }
+//        turnLeftCameraAngle()
         Thread {
             try {
                 val glbBuffer = readAsset("models/animation_separate.glb")
@@ -314,11 +299,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadGLBFromBuffer(buffer: ByteBuffer) {
         val scale =1f
-        carLiftModelViewer.loadModelGlb(buffer)
-        carLiftModelViewer.transformToUnitCube()
-        val root = carLiftModelViewer.asset?.root
+        modelViewer.loadModelGlb(buffer)
+        modelViewer.transformToUnitCube()
+
+        val root = modelViewer.asset?.root
         root?.let {
-            val transformManager = carLiftModelViewer.engine.transformManager
+            val transformManager = modelViewer.engine.transformManager
             val instance = transformManager.getInstance(it)
 
             val scaleMatrix = floatArrayOf(
@@ -331,59 +317,26 @@ class MainActivity : AppCompatActivity() {
             transformManager.setTransform(instance, scaleMatrix)
         }
 
+        turnRightCameraAngle()
 
-        for (i in 0 until carLiftModelViewer.asset?.entities!!.size) {
-//            Log.d("mjpark", "dd: " + carLiftModelViewer.asset?.getName(i))
-
-        }
-        val asset = carLiftModelViewer.asset ?: return
-        val transformManager = carLiftModelViewer.engine.transformManager
-
-        for (i in 0 until asset.entities.size) {
-            val entity = asset.entities[i]
-            val name = asset.getName(i)
-
-            // transformManager에서 인스턴스 가져오기
-            val instance = transformManager.getInstance(entity)
-
-            // 월드 변환 행렬 4x4 플로트 배열로 얻기
-            val worldTransform = FloatArray(16)
-            transformManager.getWorldTransform(instance, worldTransform)
-
-            // 변환 행렬에서 위치(translation) 성분 추출: [12], [13], [14]
-            val posX = worldTransform[12]
-            val posY = worldTransform[13]
-            val posZ = worldTransform[14]
-
-//            if (name == "door_front_left_obj001_transp"){
-//                Log.d("mjpark", "Index: $i, Name: $name, Entity: $entity")
-//                Log.d("mjpark", "Name: $name, Position: ($posX, $posY, $posZ)")
-//            }
-//            Log.d("mjpark", "Index: $i, Name: $name, Entity: $entity")
-//            Log.d("mjpark", "Name: $name, Position: ($posX, $posY, $posZ)")
-        }
-
-
-//        carLiftSurfaceView.setZOrderOnTop(true)
-//        carLiftSurfaceView.holder.setFormat(PixelFormat.TRANSLUCENT)
     }
 
 
     private fun loadEnvironmentFromBuffer(ibl: ByteBuffer, sky: ByteBuffer) {
-        KTX1Loader.createIndirectLight(carLiftModelViewer.engine, ibl).apply {
+        KTX1Loader.createIndirectLight(modelViewer.engine, ibl).apply {
             intensity = 50_000f
-            carLiftModelViewer.scene.indirectLight = this
+            modelViewer.scene.indirectLight = this
         }
 
-        KTX1Loader.createSkybox(carLiftModelViewer.engine, sky).apply {
-            carLiftModelViewer.scene.skybox = this
+        KTX1Loader.createSkybox(modelViewer.engine, sky).apply {
+            modelViewer.scene.skybox = this
         }
     }
 
     // Play selected animation
 
     private fun playAnimation(index: Int, isLoop: Boolean = true) {
-        val animator = carLiftModelViewer.animator
+        val animator = modelViewer.animator
         if (animator == null) {
             Toast.makeText(this, "Animator not initialized", Toast.LENGTH_LONG).show()
             return
@@ -411,7 +364,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun applyAllAnimations() {
-        val animator = carLiftModelViewer.animator
+        val animator = modelViewer.animator
         if (animator == null) {
             Toast.makeText(this, "Animator not initialized", Toast.LENGTH_LONG).show()
             return
@@ -449,8 +402,8 @@ class MainActivity : AppCompatActivity() {
 
         if (ndcX < -1.0 || ndcX > 1.0 || ndcY < -1.0 || ndcY > 1.0 || ndcZ < 0.0 || ndcZ > 1.0) return null
 
-        val width = carLiftSurfaceView.width.toFloat()
-        val height = carLiftSurfaceView.height.toFloat()
+        val width = surfaceView.width.toFloat()
+        val height = surfaceView.height.toFloat()
 
         val screenX = ((ndcX + 1.0) / 2.0 * width).toFloat()
         val screenY = ((1.0 - ndcY) / 2.0 * height).toFloat()
@@ -492,8 +445,8 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun updateButtonPositions() {
-        val asset = carLiftModelViewer.asset ?: return
-        val transformManager = carLiftModelViewer.engine.transformManager
+        val asset = modelViewer.asset ?: return
+        val transformManager = modelViewer.engine.transformManager
 
         // door_front_left_obj001 월드 좌표 찾기
 
@@ -546,13 +499,26 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun zoomIn() {
+        radius = max(3.5f, radius - 4f) // 최소 거리 제한
+        updateCameraWithAngle(currentAngle)
+    }
+
+    private fun zoomOut() {
+        radius = min(30f, radius + 4f) // 최대 거리 제한
+        updateCameraWithAngle(currentAngle)
+    }
 
     private fun turnLeftCameraAngle() {
         animateCameraRotation(currentAngle, currentAngle + 230f)
     }
 
+    private fun turn180CameraAngle() {
+        animateCameraRotation(currentAngle, currentAngle - 180f)
+    }
+
     private fun turnRightCameraAngle() {
-        animateCameraRotation(currentAngle, currentAngle - 90f)
+        animateCameraRotation(currentAngle, currentAngle + 45f)
     }
 
     private fun animateCameraRotation(from: Float, to: Float) {
@@ -572,14 +538,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateCameraWithAngle(angle: Float) {
+        updateCameraWithAngle(angle, currentPitch)
+    }
+
+    private fun updateCameraWithAngle(angle: Float, pitch: Float) {
         if (!::camera.isInitialized) return
 
-        val angleRad = Math.toRadians(angle.toDouble())
-        val eyeX = (radius * cos(angleRad)).toFloat()
-        val eyeZ = (radius * sin(angleRad)).toFloat()
-        val eyeY = 3.0f  // 높이 고정
+        val radYaw = Math.toRadians(angle.toDouble())  // 수평 회전
+        val radPitch = Math.toRadians(pitch.toDouble())  // 수직 회전
 
-        val asset = carLiftModelViewer.asset
+        val eyeX = (radius * cos(radPitch) * cos(radYaw)).toFloat()
+        val eyeY = (radius * sin(radPitch)).toFloat()
+        val eyeZ = (radius * cos(radPitch) * sin(radYaw)).toFloat()
+
+        val asset = modelViewer.asset
         val center = asset?.boundingBox?.center ?: floatArrayOf(0f, 0f, 0f)
 
         camera.lookAt(
@@ -598,27 +570,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun readAsset(assetName: String): ByteBuffer {
-        assets.open(assetName).use { input ->
-            val outputStream = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            var read: Int
-            while (input.read(buffer).also { read = it } != -1) {
-                outputStream.write(buffer, 0, read)
-            }
-            return ByteBuffer.wrap(outputStream.toByteArray())
-        }
+        val input = assets.open(assetName)
+        val bytes = ByteArray(input.available())
+        input.read(bytes)
+        return ByteBuffer.wrap(bytes)
     }
 
 
     private fun destroyFilament() {
         try {
-            val engine = carLiftModelViewer.engine
+            val engine = modelViewer.engine
 
             // 1. 애니메이션 루프 중지
             choreographer.removeFrameCallback(frameCallback)
 
             // 2. 모델 리소스 해제
-            carLiftModelViewer.asset?.let { asset ->
+            modelViewer.asset?.let { asset ->
                 val entityManager = EntityManager.get()
                 asset.entities.forEach { entity ->
                     engine.destroyEntity(entity)
@@ -639,4 +606,44 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    // Gesture 처리
+    // 클래스 내부에 선언
+    private inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
+
+        override fun onDown(e: MotionEvent): Boolean {
+            return false
+        }
+
+        override fun onScroll(
+            e1: MotionEvent?,
+            e2: MotionEvent,
+            distanceX: Float,
+            distanceY: Float
+        ): Boolean {
+            // 회전 처리
+            currentAngle -= distanceX * 0.2f
+            currentPitch -= distanceY * 0.1f
+            currentPitch = currentPitch.coerceIn(0f, 60f)
+
+            updateCameraWithAngle(currentAngle, currentPitch)
+            return true
+        }
+
+        override fun onDoubleTap(e: MotionEvent): Boolean {
+            // 더블탭 시 확대/축소 토글 예시
+            if (radius > 5f) zoomIn() else zoomOut()
+            return true
+        }
+
+    }
+
+
+    inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            val scaleFactor = detector.scaleFactor
+            radius = (radius / scaleFactor).coerceIn(1.5f, 30f)
+            updateCameraWithAngle(currentAngle)
+            return true
+        }
+    }
 }

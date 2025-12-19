@@ -10,8 +10,10 @@
     <TextView
         android:id="@+id/tv_genre"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/dimen_88"
         android:text="Comedy"
+        android:gravity="center_vertical"
+        android:textColor="@color/c_1D1D1D"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginBottom="@dimen/dimen_20"
@@ -21,7 +23,7 @@
     <ImageView
         android:id="@+id/iv_arrow"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/dimen_88"
         android:src="@drawable/arrow"
         android:layout_marginStart="@dimen/dimen_24"
         app:layout_constraintStart_toEndOf="@id/tv_genre"

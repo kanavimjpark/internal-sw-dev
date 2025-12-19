@@ -8,10 +8,13 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.view.Window
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +39,7 @@ class TheaterPopupDialog(context: Context) : Dialog(context) {
     private lateinit var btHulu: ImageButton
     private lateinit var btPrime: ImageButton
     private lateinit var btParamount: ImageButton
+    private lateinit var root: ConstraintLayout
 
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -52,6 +56,7 @@ class TheaterPopupDialog(context: Context) : Dialog(context) {
         btHulu = findViewById(R.id.bt_hulu)
         btPrime = findViewById(R.id.bt_prime_video)
         btParamount = findViewById(R.id.bt_paramount_video)
+        root = findViewById(R.id.popup_root)
 
         tvTitle.text = title
         tvInfo.text = message
@@ -61,7 +66,8 @@ class TheaterPopupDialog(context: Context) : Dialog(context) {
 
     fun setBanner(url: String): TheaterPopupDialog {
         this.imageUrl = url
-
+        root.outlineProvider = ViewOutlineProvider.BACKGROUND
+        root.clipToOutline = true
         if (imageUrl.isNotEmpty()) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {

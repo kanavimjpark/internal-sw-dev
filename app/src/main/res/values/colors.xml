@@ -13,7 +13,6 @@
     <color name="c_555555">#555555</color>
     <color name="c_1D1D1D">#1D1D1D</color>
     <color name="c_FF5D00">#FF5D00</color>
-    <color name="c_000000">#1A000000</color>
     <color name="setting_title_color">#555555</color>
     <color name="side_menu_color">#ECECEC</color>
     <color name="Setting_title">#1D1D1D</color>
@@ -21,7 +20,9 @@
     <color name="white_50a">#80FFFFFF</color>
     <color name="white_60a">#99FFFFFF</color>
     <color name="white_70a">#B3FFFFFF</color>
+    <color name="white_80a">#CCFFFFFF</color>
     <color name="gray_90">#E5E5E5</color>
     <color name="gray_80">#CCCCCC</color>
     <color name="alpha">#33000000</color>
+    <color name="black_10a">#1A000000</color>
 </resources>

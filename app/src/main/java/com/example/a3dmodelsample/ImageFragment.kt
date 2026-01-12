@@ -3,25 +3,17 @@ package com.example.a3dmodelsample
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.a3dmodelsample.retrofit.GracenoteRepository
+import com.example.a3dmodelsample.retrofit.EtfRepository
 import com.example.a3dmodelsample.retrofit.MainViewModelFactory
 import com.example.a3dmodelsample.retrofit.NewsRepository
 import com.example.a3dmodelsample.retrofit.RetrofitClient
 import com.example.a3dmodelsample.retrofit.WeatherRepository
-import com.example.a3dmodelsample.retrofit.data.DailyWeatherUiModel
-import com.example.a3dmodelsample.retrofit.data.FutureWeatherResponse
-import com.example.a3dmodelsample.retrofit.data.ProgramBundle
-import com.example.a3dmodelsample.retrofit.data.WeatherResponse
 import com.example.a3dmodelsample.viewmodel.MainViewModel
 
 class ImageFragment : Fragment(R.layout.fragment_image) {
@@ -41,11 +33,13 @@ class ImageFragment : Fragment(R.layout.fragment_image) {
 
     private val NEWS_API_KEY = "dd07ab437c704c74babae5f73df37976"
     private val WEATHER_API_KEY = "16b7d1ccd4c3e4f4f42e2051cb5fe5dd"
+    private val ALPHA_STOCK_API_KEY = "M19CY7MOHU7ZJ0WP"
 
 
     private fun setupViewModel() {
         // Create API clients
         val newsApi = RetrofitClient.createNewsApi(NEWS_API_KEY)
+        val etfApi = RetrofitClient.createStockApi(ALPHA_STOCK_API_KEY)
 
         // Create repositories
         val weatherRepo = WeatherRepository(
@@ -56,8 +50,13 @@ class ImageFragment : Fragment(R.layout.fragment_image) {
             apiKey = NEWS_API_KEY
         )
 
+        val etfRepo = EtfRepository(
+            api = etfApi,
+            apiKey = ALPHA_STOCK_API_KEY
+        )
+
         // Create ViewModel via factory
-        val factory = MainViewModelFactory(weatherRepo, newsRepo)
+        val factory = MainViewModelFactory(weatherRepo, newsRepo, etfRepo)
         mainViewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
     }
 

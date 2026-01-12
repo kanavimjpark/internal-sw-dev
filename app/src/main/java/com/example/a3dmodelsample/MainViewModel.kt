@@ -2,28 +2,29 @@
 package com.example.a3dmodelsample.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.a3dmodelsample.retrofit.EtfRepository
 import com.example.a3dmodelsample.retrofit.NewsRepository
 import com.example.a3dmodelsample.retrofit.WeatherRepository
 import com.example.a3dmodelsample.retrofit.data.DailyWeatherUiModel
-import com.example.a3dmodelsample.retrofit.data.ForecastResponse
-import com.example.a3dmodelsample.retrofit.data.FutureWeatherResponse
+import com.example.a3dmodelsample.retrofit.data.EtfQuoteUi
 import com.example.a3dmodelsample.retrofit.data.HourlyWeatherUi
 import com.example.a3dmodelsample.retrofit.data.WeatherResponse
 import com.example.a3dmodelsample.retrofit.data.NewsResponse
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
+
 
 class MainViewModel(
     private val weatherRepo: WeatherRepository,
-    private val newsRepo: NewsRepository
+    private val newsRepo: NewsRepository,
+    private val etfRepo: EtfRepository
 ) : ViewModel() {
 
     val weatherLiveData = MutableLiveData<WeatherResponse>()
-//    val threeHourStepWeatherLiveData = MutableLiveData<ForecastResponse>()
 
     private val _threeHourStepWeatherLiveData = MutableLiveData<List<HourlyWeatherUi>>()
     val threeHourStepWeatherLiveData: MutableLiveData<List<HourlyWeatherUi>> = _threeHourStepWeatherLiveData
@@ -34,13 +35,9 @@ class MainViewModel(
     val newsLiveData = MutableLiveData<NewsResponse>()
     val errorLiveData = MutableLiveData<String>()
 
-    val zoneId = ZoneId.of("Asia/Seoul")
-    val today = LocalDate.now(zoneId)
-    val startDate = today
-    val endDate = today.plusDays(6)
+    private val _etfData = MutableLiveData<List<EtfQuoteUi>>()
+    val etfData: MutableLiveData<List<EtfQuoteUi>> = _etfData
 
-    val startDateStr = startDate.toString()
-    val endDateStr = endDate.toString()
 
 
     fun loadWeather(city: String) {
@@ -86,5 +83,17 @@ class MainViewModel(
             }
         }
     }
+
+    fun getETFData() {
+        viewModelScope.launch {
+            try {
+                val data = etfRepo.fetchMajorEtfQuotes()
+                etfData.postValue(data)
+            } catch (e: Exception) {
+                errorLiveData.postValue("Stock error: ${e.message}")
+            }
+        }
+    }
+
 
 }

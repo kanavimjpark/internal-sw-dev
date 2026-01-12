@@ -3,11 +3,9 @@ package com.example.a3dmodelsample.retrofit
 
 import com.example.a3dmodelsample.retrofit.data.DailyWeatherUiModel
 import com.example.a3dmodelsample.retrofit.data.ForecastResponse
-import com.example.a3dmodelsample.retrofit.data.FutureWeatherResponse
 import com.example.a3dmodelsample.retrofit.data.HourlyWeatherUi
 import com.example.a3dmodelsample.retrofit.data.WeatherResponse
 import com.example.a3dmodelsample.retrofit.data.toDailyUiList
-import com.example.a3dmodelsample.retrofit.data.toHourlyUi
 import com.example.a3dmodelsample.retrofit.data.toHourlyUiList
 
 class WeatherRepository(

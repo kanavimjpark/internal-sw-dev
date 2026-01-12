@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.content.res.Resources
+import android.opengl.Matrix
 import android.util.Log
 import android.view.Choreographer
 import android.view.GestureDetector
@@ -12,7 +13,9 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import android.view.animation.LinearInterpolator
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -26,11 +29,13 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.example.a3dmodelsample.retrofit.EtfRepository
 import com.example.a3dmodelsample.retrofit.MainViewModelFactory
 import com.example.a3dmodelsample.retrofit.NewsRepository
 import com.example.a3dmodelsample.retrofit.RetrofitClient
 import com.example.a3dmodelsample.retrofit.TickerWsClient
 import com.example.a3dmodelsample.retrofit.WeatherRepository
+import com.example.a3dmodelsample.retrofit.data.Index
 import com.example.a3dmodelsample.viewmodel.MainViewModel
 import com.google.android.filament.utils.KTX1Loader
 import com.google.android.filament.utils.ModelViewer
@@ -56,29 +61,78 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSetting: ConstraintLayout
     private lateinit var rootLayout: FrameLayout
     private lateinit var btnDoorFrontLeft: ImageButton
-    private lateinit var btnDoorFrontLeftTransp: ImageButton
+    private lateinit var btnDoorFrontRight: ImageButton
+    private lateinit var btnDoorRearLeft: ImageButton
+    private lateinit var btnDoorRearRight: ImageButton
+    private lateinit var btnTrunk: ImageButton
+
     // Filament ModelViewer & Choreographer
     private lateinit var choreographer: Choreographer
     private lateinit var modelViewer: ModelViewer
     private lateinit var tickerWsClient: TickerWsClient
 
-    // Animation control variables
-    private var carLiftAnimationIndex = 0
-    private var carLiftAnimationSpeed = 1
-    private var carLiftAnimationStartTime = 0L
-    private var loopAnimation = false
+    //3D
+    private lateinit var lvEnter3DSetting: LinearLayout
+    private lateinit var lvWidget: LinearLayout
+    private lateinit var lv3DSettingView: LinearLayout
+
+    private lateinit var btnHeadLight: Button
+    private lateinit var btnAllWindow: Button
+    private lateinit var btnSideMirror: Button
+    private lateinit var btnFuelDoor: Button
+
+    private var trunkAnimationIndex = listOf<Int>()
+    private var multiAnimationIndex = listOf<Int>()
+    private enum class Feature { HEADLIGHT, SIDE_MIRROR, FUEL_DOOR }
+
+    private var animationIndex = 0
+    private var animationStartTime = 0L
     private var isAnimationPlaying = false
+    // 현재 모델 애니메이션이 도는 동안 들어온 "다음 요청" 1개만 보관(마지막 요청 덮어쓰기)
+    private var pendingModelAction: (() -> Unit)? = null
+
+    // 종료 콜백 1회 호출 보장용
+    private var modelAnimEndFired = false
+
+
+    private val doorState = mutableMapOf(
+        "door_front_left" to false,
+        "door_front_right" to false,
+        "door_back_left_obj001" to false,
+        "door_back_right_obj001" to false,
+        "trunk" to false
+    )
+
+
+    private var sideMirrorOpenState = false
+    private var fuelDoorOpenState = false
+    private var windowOpenState = false
+    private var headLightOpenState = false
+    private var trunkOpenState = false
+//    private var settingState = false
+    private var isReversePlaying = false
+
+    //버튼 올리기 위한 변수
+    private val entityByName = mutableMapOf<String, Int>()
+
+    // 필요한 엔티티 이름들만 딱 지정
+    private val targetEntityNames = setOf(
+        "door_front_left",
+        "door_back_left_obj001",
+        "door_front_right",
+        "door_back_right_obj001",
+        "trunk"
+    )
 
     private lateinit var camera: Camera
     private var cameraEntity: Int = 0
 
-    private var currentAngle = 0f
-    private var radius = 6.0f  // 기본 줌 거리
-    private var angleDegree = 0
-    private var currentPitch = 40f
+    private lateinit var cameraController: CameraController
+    private lateinit var anchorProjector: AnchorProjector
 
     private val NEWS_API_KEY = "dd07ab437c704c74babae5f73df37976"
     private val WEATHER_API_KEY = "16b7d1ccd4c3e4f4f42e2051cb5fe5dd"
+    private val ALPHA_STOCK_API_KEY = "M19CY7MOHU7ZJ0WP"
 
     private lateinit var gestureDetector: GestureDetector
     private lateinit var scaleGestureDetector: ScaleGestureDetector
@@ -86,41 +140,91 @@ class MainActivity : AppCompatActivity() {
     // Frame callback for animation update
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(currentTime: Long) {
-//            if (!isRendering) return
             choreographer.postFrameCallback(this)
 
-            if (isAnimationPlaying) {
-                val elapsedSeconds = (currentTime - carLiftAnimationStartTime).toDouble() / 1_000_000_000
+            modelViewer.animator?.takeIf { isAnimationPlaying }?.apply {
+                val elapsedSeconds = (System.nanoTime() - animationStartTime) / 1_000_000_000.0f
+                val timeInAnim = elapsedSeconds
 
                 modelViewer.animator?.apply {
-                    if (animationCount > 0) {
-                        val duration = getAnimationDuration(carLiftAnimationIndex)
-                        if (duration != 0f) {
-                            val timeInAnim = if (loopAnimation) {
-                                (elapsedSeconds * carLiftAnimationSpeed % duration)
-                            } else {
-                                (elapsedSeconds * carLiftAnimationSpeed).coerceAtMost(duration.toDouble())
-                            }
+                    if (trunkAnimationIndex.isNotEmpty()) {
+                        val maxDuration = trunkAnimationIndex.maxOfOrNull { getAnimationDuration(it) } ?: 0f
 
-                            applyAnimation(carLiftAnimationIndex, timeInAnim.toFloat())
+                        for (index in trunkAnimationIndex) {
+                            applyAnimation(index, timeInAnim)
+                        }
+
+                        if (timeInAnim >= (maxDuration - 0.02f)) {
+                            isAnimationPlaying = false
+                            updateBoneMatrices()
+                        }
+                        if (!modelAnimEndFired) {
+                            modelAnimEndFired = true
+                            val next = pendingModelAction
+                            pendingModelAction = null
+                            next?.invoke()
+                        }else modelAnimEndFired = false
+                    }
+                    else if (multiAnimationIndex.isNotEmpty()) {
+                        val maxDuration = multiAnimationIndex.maxOfOrNull { getAnimationDuration(it) } ?: 0f
+
+                        for (index in multiAnimationIndex) {
+                            applyAnimation(index, timeInAnim)
+                        }
+
+                        if (timeInAnim >= (maxDuration - 0.1f)) {
+                            isAnimationPlaying = false
+                            updateBoneMatrices()
+                        } else if (isReversePlaying) {
+                            isAnimationPlaying = false
+                        }
+
+                        if (!isAnimationPlaying && !isReversePlaying) {
+                            // To run only once
+                            if (!modelAnimEndFired) {
+                                modelAnimEndFired = true
+                                val next = pendingModelAction
+                                pendingModelAction = null
+                                next?.invoke()
+                            }
+                        } else {
+                            if (!modelAnimEndFired) {
+                                modelAnimEndFired = true
+                                val next = pendingModelAction
+                                pendingModelAction = null
+                                next?.invoke()
+                            }else modelAnimEndFired = false
+                        }
+
+
+                    }
+                    else if (animationIndex in 0 until animationCount) {
+                        val duration = getAnimationDuration(animationIndex)
+                        if (duration > 0f) {
+                            val time = timeInAnim.coerceAtMost(duration)
+
+                            applyAnimation(animationIndex, time)
+
+                            if (time >= (duration - 0.02f)) {
+                                isAnimationPlaying = false
+                            }
+                            if (!isAnimationPlaying) {
+                                // To run only once
+                                if (!modelAnimEndFired) {
+                                    modelAnimEndFired = true
+                                    val next = pendingModelAction
+                                    pendingModelAction = null
+                                    next?.invoke()
+                                }
+                            } else {
+                                modelAnimEndFired = false
+                            }
                         }
                     }
                     updateBoneMatrices()
-                    updateButtonPositions()
                 }
             }
-
             modelViewer.render(currentTime)
-        }
-
-        private fun Int.getTransform(): Mat4 {
-            val tm = modelViewer.engine.transformManager
-            return Mat4.of(*tm.getTransform(tm.getInstance(this), null as FloatArray?))
-        }
-
-        private fun Int.setTransform(mat: Mat4) {
-            val tm = modelViewer.engine.transformManager
-            tm.setTransform(tm.getInstance(this), mat.toFloatArray())
         }
     }
 
@@ -178,6 +282,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupViewModel() {
         // Create API clients
         val newsApi = RetrofitClient.createNewsApi(NEWS_API_KEY)
+        val etfApi = RetrofitClient.createStockApi(ALPHA_STOCK_API_KEY)
 
         // Create repositories
         val weatherRepo = WeatherRepository(
@@ -188,8 +293,13 @@ class MainActivity : AppCompatActivity() {
             apiKey = NEWS_API_KEY
         )
 
+        val etfRepo = EtfRepository(
+            api = etfApi,
+            apiKey = ALPHA_STOCK_API_KEY
+        )
+
         // Create ViewModel via factory
-        val factory = MainViewModelFactory(weatherRepo, newsRepo)
+        val factory = MainViewModelFactory(weatherRepo, newsRepo, etfRepo)
         mainViewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
     }
 
@@ -220,6 +330,18 @@ class MainActivity : AppCompatActivity() {
         mainViewModel.newsLiveData.observe(this, Observer { news ->
             Log.d("MainActivity", "📰 Top Headline = ${news.articles?.firstOrNull()?.title}")
         })
+        mainViewModel.getETFData()
+        mainViewModel.etfData.observe(this) { list ->
+            Log.d("MainActivity", "ETF size = ${list.size}")
+            list.forEach {
+                Log.d(
+                    "MainActivity",
+                    "ETF ${it.displayName} (${it.symbol}) " +
+                            "price=${it.currentPrice}, change=${it.change}, valid=${it.isValid}"
+                )
+            }
+        }
+
 
 
         // Bind views
@@ -228,15 +350,230 @@ class MainActivity : AppCompatActivity() {
         btnMedia = findViewById(R.id.bt_list)
         btnSetting = findViewById(R.id.manual_widget)
         rootLayout = findViewById(R.id.fl_surface_container)
+        lvWidget = findViewById(R.id.lv_widget)
+        lv3DSettingView = findViewById(R.id.lv_3d_setting_button)
+        btnHeadLight = findViewById(R.id.btn_head_light)
+        btnAllWindow = findViewById(R.id.btn_all_window)
+        btnSideMirror = findViewById(R.id.btn_side_mirror)
+        btnFuelDoor = findViewById(R.id.btn_fuel_door)
+        btnDoorFrontLeft = ImageButton(this).apply {
+            setBackgroundResource(R.drawable.home_car_door_button)
+            setImageResource(R.drawable.door_normal)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(80, 81)
+            setOnClickListener {
+                runOrQueueModelAction {
+                    toggleDoor(
+                        id = "door_front_left",
+                        btn = this,
+                        openAnimIndex = Index.DRIVER_DOOR_OPEN.type,
+                        closeAnimIndex = Index.DRIVER_DOOR_CLOSE.type,
+                        openIconRes = R.drawable.door_selected,
+                        closeIconRes = R.drawable.door_normal
+                    )
+                }
+            }
+        }
+        btnDoorFrontRight = ImageButton(this).apply {
+            setBackgroundResource(R.drawable.home_car_door_button)
+            setImageResource(R.drawable.door_normal)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(80, 81)
+            setOnClickListener {
+                runOrQueueModelAction {
+                    toggleDoor(
+                        id = "door_front_right",
+                        btn = this,
+                        openAnimIndex = Index.PASSENGER_DOOR_OPEN.type,
+                        closeAnimIndex = Index.PASSENGER_DOOR_CLOSE.type,
+                        openIconRes = R.drawable.door_selected,
+                        closeIconRes = R.drawable.door_normal
+                    )
+                }
+            }
+        }
+        btnDoorRearLeft = ImageButton(this).apply {
+            setBackgroundResource(R.drawable.home_car_door_button)
+            setImageResource(R.drawable.door_normal)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(80, 81)
+            setOnClickListener {
+                runOrQueueModelAction {
+                    toggleDoor(
+                        id = "door_back_left_obj001",
+                        btn = this,
+                        openAnimIndex = Index.REAR_LEFT_DOOR_OPEN.type,
+                        closeAnimIndex = Index.REAR_LEFT_DOOR_CLOSE.type,
+                        openIconRes = R.drawable.door_selected,
+                        closeIconRes = R.drawable.door_normal
+                    )
+                }
+            }
+        }
+        btnDoorRearRight = ImageButton(this).apply {
+            setBackgroundResource(R.drawable.home_car_door_button)
+            setImageResource(R.drawable.door_normal)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(80, 81)
+            setOnClickListener {
+                runOrQueueModelAction {
+                    toggleDoor(
+                        id = "door_back_right_obj001",
+                        btn = this,
+                        openAnimIndex = Index.REAR_RIGHT_DOOR_OPEN.type,
+                        closeAnimIndex = Index.REAR_RIGHT_DOOR_CLOSE.type,
+                        openIconRes = R.drawable.door_selected,
+                        closeIconRes = R.drawable.door_normal
+                    )
+                }
+            }
+        }
+        btnTrunk = ImageButton(this).apply {
+            setBackgroundResource(R.drawable.home_car_door_button)
+            setImageResource(R.drawable.trunk_normal)
+            visibility = View.GONE
+            layoutParams = FrameLayout.LayoutParams(80, 81)
+            setOnClickListener {
+                runOrQueueModelAction {
+                    if (trunkOpenState) {
+                        // 닫기
+                        playTrunkAnimations(
+                            listOf(
+                                Index.TRUNK_CLOSE1.type,
+                                Index.TRUNK_CLOSE2.type,
+                                Index.TRUNK_CLOSE3.type
+                            )
+                        )
+                        btnTrunk.isSelected = false
+                        setImageResource(R.drawable.trunk_normal)
+                    } else {
+                        // 열기
+                        playTrunkAnimations(
+                            listOf(
+                                Index.TRUNK_OPEN1.type,
+                                Index.TRUNK_OPEN2.type,
+                                Index.TRUNK_OPEN3.type
+                            )
+                        )
+                        btnTrunk.isSelected = true
+                        setImageResource(R.drawable.trunk_selected)
+                    }
+
+                    trunkOpenState = !trunkOpenState
+                    Log.d("mjpark", "트렁크 클릭됨 ")
+                }
+            }
+        }
+        surfaceView.setZOrderOnTop(false)
+        rootLayout.addView(btnDoorFrontLeft)
+        rootLayout.addView(btnDoorFrontRight)
+        rootLayout.addView(btnDoorRearLeft)
+        rootLayout.addView(btnDoorRearRight)
+        rootLayout.addView(btnTrunk)
+
         // Assign button listeners
-//        btnDown.setOnClickListener { playAnimation(ANIM_DOWN) }
-//        btnAni.setOnClickListener { isAnimationPlaying = false}
-//        btnIdleFinal.setOnClickListener { zoomIn() }
-//        btnIdleMid.setOnClickListener { zoomOut() }
-//        btnIdUp.setOnClickListener { turnLeftCamera() }
-//
-//        btnSpeedUp.setOnClickListener { carLiftAnimationSpeed *= 2 }
-//        btnSpeedDown.setOnClickListener { turnRightCamera() }
+        btnHeadLight.setOnClickListener {
+            Log.d("mjpark","headLightOpenState : $headLightOpenState")
+            runOrQueueModelAction {
+                if (headLightOpenState) {
+                    // off
+                    playSeveralAnimations(
+                        listOf(
+                            Index.HEADLIGHT1.type,
+                            Index.HEADLIGHT2.type,
+                            Index.HEADLIGHT3.type,
+                            Index.HEADLIGHT4.type
+                        ),
+                        reverse = true
+                    )
+                } else {
+                    // on
+                    playSeveralAnimations(
+                        listOf(
+                            Index.HEADLIGHT1.type,
+                            Index.HEADLIGHT2.type,
+                            Index.HEADLIGHT3.type,
+                            Index.HEADLIGHT4.type
+                        ),
+                        reverse = false
+                    )
+                }
+
+                headLightOpenState = !headLightOpenState
+                onFeatureButtonClicked(Feature.HEADLIGHT)
+            }
+        }
+        btnAllWindow.setOnClickListener {
+            runOrQueueModelAction {
+                if (windowOpenState) {
+                    // close
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_UP.type,
+                            Index.PASSENGER_WINDOW_UP.type,
+                            Index.REAR_LEFT_WINDOW_UP.type,
+                            Index.REAR_RIGHT_WINDOW_UP.type
+                        ),
+                        reverse = false
+                    )
+                } else {
+                    // open
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_DOWN.type,
+                            Index.PASSENGER_WINDOW_DOWN.type,
+                            Index.REAR_LEFT_WINDOW_DOWN.type,
+                            Index.REAR_RIGHT_WINDOW_DOWN.type
+                        ),
+                        reverse = false
+                    )
+                }
+
+                windowOpenState = !windowOpenState
+            }
+        }
+        btnSideMirror.setOnClickListener {
+            runOrQueueModelAction{
+                if (sideMirrorOpenState) {
+                    // close
+                    playSeveralAnimations(
+                        listOf(
+                            Index.SIDE_MIRROR_LEFT_CLOSE.type,
+                            Index.SIDE_MIRROR_RIGHT_CLOSE.type
+                        ),
+                        reverse = false
+                    )
+                } else {
+                    // open
+                    playSeveralAnimations(
+                        listOf(
+                            Index.SIDE_MIRROR_LEFT_OPEN.type,
+                            Index.SIDE_MIRROR_RIGHT_OPEN.type
+                        ),
+                        reverse = false
+                    )
+                }
+
+                sideMirrorOpenState = !sideMirrorOpenState
+                onFeatureButtonClicked(Feature.SIDE_MIRROR)
+            }
+        }
+        btnFuelDoor.setOnClickListener {
+            runOrQueueModelAction {
+                if (fuelDoorOpenState) {
+                    // close
+                    playAnimation(Index.OIL_DOOR_CLOSE.type)
+                } else {
+                    // open
+                    playAnimation(Index.OIL_DOOR_OPEN.type)
+                }
+
+                fuelDoorOpenState = !fuelDoorOpenState
+                onFeatureButtonClicked(Feature.FUEL_DOOR)
+            }
+        }
+        lvWidget.visibility = View.VISIBLE
+        lv3DSettingView.visibility = View.VISIBLE
 
         btnMedia.setOnClickListener {
             stopAnimationLoop()
@@ -269,14 +606,31 @@ class MainActivity : AppCompatActivity() {
 
         cameraEntity = EntityManager.get().create()
         camera = modelViewer.engine.createCamera(cameraEntity)
-        camera.setProjection(100.0, 1280.0 / 720.0, 0.9, 100.0, Camera.Fov.HORIZONTAL) // 종횡비는 화면 비율에 맞게 조정
+        camera.setProjection(65.0, 1920.0 / 1080.0, 0.1, 100.0, Camera.Fov.HORIZONTAL) // 종횡비는 화면 비율에 맞게 조정
         modelViewer.view.camera = camera
         surfaceView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
             scaleGestureDetector.onTouchEvent(event)
             true
         }
-//        turnLeftCameraAngle()
+
+        cameraController = CameraController(camera).apply {
+            centerProvider = {
+                val c = modelViewer.asset?.boundingBox?.center ?: floatArrayOf(0f, 0f, 0f)
+
+                floatArrayOf(c[0] + 0f, c[1] - 1.0f, c[2] - 1.3f)
+            }
+        }
+
+        anchorProjector = AnchorProjector(
+            modelViewer = modelViewer,
+            surfaceView = surfaceView,
+            rootLayout = rootLayout,
+            camera = camera,
+            cameraController = cameraController
+        )
+
+
         Thread {
             try {
                 val glbBuffer = readAsset("models/animation_separate.glb")
@@ -296,32 +650,81 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
     }
-
     private fun loadGLBFromBuffer(buffer: ByteBuffer) {
-        val scale =1f
         modelViewer.loadModelGlb(buffer)
-        modelViewer.transformToUnitCube()
 
-        val root = modelViewer.asset?.root
-        root?.let {
-            val transformManager = modelViewer.engine.transformManager
-            val instance = transformManager.getInstance(it)
+        val asset = modelViewer.asset ?: return
+        Log.d("mjpark", "Loaded entities: ${asset.entities.size}")
 
-            val scaleMatrix = floatArrayOf(
-                scale, 0f, 0f, 0f,
-                0f, scale, 0f, 0f,
-                0f, 0f, scale, 0f,
-                0f, 0f, 0f, 1f
-            )
+        entityByName.clear()
 
-            transformManager.setTransform(instance, scaleMatrix)
+        for (entity in asset.entities) {
+            val name = asset.getName(entity) ?: continue
+
+            if (name in targetEntityNames) {
+                entityByName[name] = entity
+                Log.d("mjpark", "Saved entity: $name -> $entity")
+            }
+        }
+        cameraController.setState(
+            yaw = 30f,
+            pitch = 30f,
+            radius = 9.0f
+        )
+        updateButtonPositions()
+    }
+
+    private fun toggleDoor(
+        id: String,
+        btn: ImageButton,
+        openAnimIndex: Int,
+        closeAnimIndex: Int,
+        openIconRes: Int,
+        closeIconRes: Int
+    ) {
+        val isOpen = doorState[id] == true
+
+        if (isOpen) {
+            playAnimation(closeAnimIndex)
+            btn.isSelected = false
+            btn.setImageResource(closeIconRes)
+        } else {
+            playAnimation(openAnimIndex)
+            btn.isSelected = true
+            btn.setImageResource(openIconRes)
         }
 
-        turnRightCameraAngle()
-
+        doorState[id] = !isOpen
+        Log.d("mjpark", "toggleDoor: $id -> ${doorState[id]}")
     }
 
 
+    private fun getButtonById(id: String): ImageButton? = when (id) {
+        "door_front_left" -> btnDoorFrontLeft
+        "door_front_right" -> btnDoorFrontRight
+        "door_back_left_obj001" -> btnDoorRearLeft
+        "door_back_right_obj001" -> btnDoorRearRight
+        "trunk" -> btnTrunk
+        else -> null
+    }
+
+    private fun updateButtonPositions() {
+        val transformManager = modelViewer.engine.transformManager
+        val center = cameraController.centerProvider()
+
+        for (name in targetEntityNames) {
+            val entity = entityByName[name] ?: continue
+            val btn = getButtonById(name) ?: continue
+            anchorProjector.updateEntityButton(
+                id = name,
+                entity = entity,
+                btn = btn,
+                transformManager = transformManager,
+                center = center,
+                yOffsetPx = 100f
+            )
+        }
+    }
     private fun loadEnvironmentFromBuffer(ibl: ByteBuffer, sky: ByteBuffer) {
         KTX1Loader.createIndirectLight(modelViewer.engine, ibl).apply {
             intensity = 50_000f
@@ -332,238 +735,77 @@ class MainActivity : AppCompatActivity() {
             modelViewer.scene.skybox = this
         }
     }
+    private fun runOrQueueModelAction(action: () -> Unit) {
+        if (isAnimationPlaying) {
+            // If it's playing now, wait (leaving only the last request)
+            pendingModelAction = action
+            return
+        }
+        action()
+    }
+
 
     // Play selected animation
+    private fun playAnimation(index: Int) {
+        val animator = modelViewer.animator ?: return
+        if (index < 0 || index >= animator.animationCount) return
 
-    private fun playAnimation(index: Int, isLoop: Boolean = true) {
-        val animator = modelViewer.animator
-        if (animator == null) {
-            Toast.makeText(this, "Animator not initialized", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val animationCount = animator.animationCount
-        if (index < 0 || index >= animationCount) {
-            Toast.makeText(this, "Invalid animation index: $index", Toast.LENGTH_LONG).show()
-            return
-        }
-
+        trunkAnimationIndex = emptyList()
+        multiAnimationIndex = emptyList()
         isAnimationPlaying = true
-        carLiftAnimationIndex = index
-        loopAnimation = isLoop
-        carLiftAnimationStartTime = System.nanoTime()
-
-        val duration = animator.getAnimationDuration(index)
-        val name = animator.getAnimationName(index)
-
-        if (duration == 0f) {
-            Toast.makeText(this, "Animation '$name' has zero duration.", Toast.LENGTH_LONG).show()
-        } else {
-            Toast.makeText(this, "Playing '$name' ($duration seconds)", Toast.LENGTH_LONG).show()
-        }
+        animationIndex = index
+        animationStartTime = System.nanoTime()
     }
 
-    fun applyAllAnimations() {
-        val animator = modelViewer.animator
-        if (animator == null) {
-            Toast.makeText(this, "Animator not initialized", Toast.LENGTH_LONG).show()
-            return
-        }
-        val animationCount = animator.animationCount
-        val time = System.nanoTime() / 1_000_000_000f
-        for (i in 0 until animationCount) {
-            animator.applyAnimation(i, time)
-        }
-        animator.updateBoneMatrices()
+    private fun playSeveralAnimations(indices: List<Int>, reverse: Boolean = false) {
+        val animator = modelViewer.animator ?: return
+
+        if (indices.any { it < 0 || it >= animator.animationCount }) return
+
+        animationIndex = -1
+        trunkAnimationIndex = emptyList()
+        multiAnimationIndex = indices
+        animationStartTime = System.nanoTime()
+        isAnimationPlaying = true
+        isReversePlaying = reverse
     }
 
-    // 월드 좌표 3개짜리 FloatArray → 화면 좌표 (Pair<Float, Float>), 화면 밖이면 null
-    private fun projectWorldToScreen(worldPos: FloatArray): Pair<Float, Float>? {
-        if (!::camera.isInitialized) return null
+    fun playTrunkAnimations(indices: List<Int>) {
+        val animator = modelViewer.animator ?: return
 
-        val viewMatrix = DoubleArray(16)
-        camera.getViewMatrix(viewMatrix)
+        if (indices.any { it < 0 || it >= animator.animationCount }) return
 
-        val projMatrix = DoubleArray(16)
-        camera.getProjectionMatrix(projMatrix)
-
-        val vpMatrix = DoubleArray(16)
-        // Double 배열끼리 곱셈을 위해 별도 함수 필요
-        multiplyMMDouble(vpMatrix, 0, projMatrix, 0, viewMatrix, 0)
-
-        val worldVec = doubleArrayOf(worldPos[0].toDouble(), worldPos[1].toDouble(), worldPos[2].toDouble(), 1.0)
-        val clipCoords = DoubleArray(4)
-        multiplyMVDouble(clipCoords, 0, vpMatrix, 0, worldVec, 0)
-
-        if (clipCoords[3] == 0.0) return null
-        val ndcX = clipCoords[0] / clipCoords[3]
-        val ndcY = clipCoords[1] / clipCoords[3]
-        val ndcZ = clipCoords[2] / clipCoords[3]
-
-        if (ndcX < -1.0 || ndcX > 1.0 || ndcY < -1.0 || ndcY > 1.0 || ndcZ < 0.0 || ndcZ > 1.0) return null
-
-        val width = surfaceView.width.toFloat()
-        val height = surfaceView.height.toFloat()
-
-        val screenX = ((ndcX + 1.0) / 2.0 * width).toFloat()
-        val screenY = ((1.0 - ndcY) / 2.0 * height).toFloat()
-//        Log.d("mjpark", "screenX: $screenX, screenY: $screenY")
-        return Pair(screenX, screenY)
+        animationIndex = -1
+        trunkAnimationIndex = indices
+        multiAnimationIndex = emptyList()
+        animationStartTime = System.nanoTime()
+        isAnimationPlaying = true
     }
 
-    // 4x4 행렬 곱셈 (Double)
-    private fun multiplyMMDouble(
-        result: DoubleArray, resultOffset: Int,
-        lhs: DoubleArray, lhsOffset: Int,
-        rhs: DoubleArray, rhsOffset: Int
-    ) {
-        for (i in 0..3) {
-            for (j in 0..3) {
-                var sum = 0.0
-                for (k in 0..3) {
-                    sum += lhs[lhsOffset + i * 4 + k] * rhs[rhsOffset + k * 4 + j]
-                }
-                result[resultOffset + i * 4 + j] = sum
-            }
-        }
-    }
-
-    // 4x4 행렬 * 4x1 벡터 곱셈 (Double)
-    private fun multiplyMVDouble(
-        resultVec: DoubleArray, resultVecOffset: Int,
-        mat: DoubleArray, matOffset: Int,
-        vec: DoubleArray, vecOffset: Int
-    ) {
-        for (i in 0..3) {
-            var sum = 0.0
-            for (j in 0..3) {
-                sum += mat[matOffset + i * 4 + j] * vec[vecOffset + j]
-            }
-            resultVec[resultVecOffset + i] = sum
-        }
-    }
-
-
-    private fun updateButtonPositions() {
-        val asset = modelViewer.asset ?: return
-        val transformManager = modelViewer.engine.transformManager
-
-        // door_front_left_obj001 월드 좌표 찾기
-
-        val doorFrontLeftEntity = if (asset.getName(61) == "door_front_left_obj001") {
-            asset.entities[61]
-        } else {
-            null
+    private fun onFeatureButtonClicked(feature: Feature) {
+        val targetAngle = when (feature) {
+            Feature.HEADLIGHT -> 45f
+            Feature.SIDE_MIRROR -> 45f
+            Feature.FUEL_DOOR -> -45f
         }
 
-
-        // door_front_left_obj001_transp 월드 좌표 찾기
-
-        val doorFrontLeftTranspEntity = if (asset.entities.size > 62) asset.entities[62] else null
-
-
-        doorFrontLeftEntity?.let {
-            val instance = transformManager.getInstance(it)
-            val worldTransform = FloatArray(16)
-            transformManager.getWorldTransform(instance, worldTransform)
-            val pos = floatArrayOf(worldTransform[12], worldTransform[13], worldTransform[14])
-
-            projectWorldToScreen(pos)?.let { (x, y) ->
-                btnDoorFrontLeft.x = x - btnDoorFrontLeft.width / 2f
-                btnDoorFrontLeft.y = y - btnDoorFrontLeft.height / 2f
-                btnDoorFrontLeft.visibility = android.view.View.VISIBLE
-            } ?: run {
-                btnDoorFrontLeft.visibility = android.view.View.GONE
-            }
-        } ?: run {
-            btnDoorFrontLeft.visibility = android.view.View.GONE
-        }
-
-        doorFrontLeftTranspEntity?.let {
-            val instance = transformManager.getInstance(it)
-            val worldTransform = FloatArray(16)
-            transformManager.getWorldTransform(instance, worldTransform)
-            val pos = floatArrayOf(worldTransform[12], worldTransform[13], worldTransform[14])
-
-            projectWorldToScreen(pos)?.let { (x, y) ->
-                btnDoorFrontLeftTransp.x = x - btnDoorFrontLeftTransp.width / 2f
-                btnDoorFrontLeftTransp.y = y - btnDoorFrontLeftTransp.height / 2f
-                btnDoorFrontLeftTransp.visibility = android.view.View.VISIBLE
-            } ?: run {
-                btnDoorFrontLeftTransp.visibility = android.view.View.GONE
-            }
-        } ?: run {
-            btnDoorFrontLeftTransp.visibility = android.view.View.GONE
-        }
-
-
-    }
-
-    private fun zoomIn() {
-        radius = max(3.5f, radius - 4f) // 최소 거리 제한
-        updateCameraWithAngle(currentAngle)
-    }
-
-    private fun zoomOut() {
-        radius = min(30f, radius + 4f) // 최대 거리 제한
-        updateCameraWithAngle(currentAngle)
-    }
-
-    private fun turnLeftCameraAngle() {
-        animateCameraRotation(currentAngle, currentAngle + 230f)
-    }
-
-    private fun turn180CameraAngle() {
-        animateCameraRotation(currentAngle, currentAngle - 180f)
-    }
-
-    private fun turnRightCameraAngle() {
-        animateCameraRotation(currentAngle, currentAngle + 45f)
-    }
-
-    private fun animateCameraRotation(from: Float, to: Float) {
-        val animator = ValueAnimator.ofFloat(from, to).apply {
-            duration = 500
-            interpolator = LinearInterpolator()
-            addUpdateListener { animation ->
-                val animatedAngle = animation.animatedValue as Float
-                updateCameraWithAngle(animatedAngle)
-            }
-            doOnEnd {
-                currentAngle = (to % 360 + 360) % 360
-                angleDegree = currentAngle.toInt()
-            }
-        }
-        animator.start()
-    }
-
-    private fun updateCameraWithAngle(angle: Float) {
-        updateCameraWithAngle(angle, currentPitch)
-    }
-
-    private fun updateCameraWithAngle(angle: Float, pitch: Float) {
-        if (!::camera.isInitialized) return
-
-        val radYaw = Math.toRadians(angle.toDouble())  // 수평 회전
-        val radPitch = Math.toRadians(pitch.toDouble())  // 수직 회전
-
-        val eyeX = (radius * cos(radPitch) * cos(radYaw)).toFloat()
-        val eyeY = (radius * sin(radPitch)).toFloat()
-        val eyeZ = (radius * cos(radPitch) * sin(radYaw)).toFloat()
-
-        val asset = modelViewer.asset
-        val center = asset?.boundingBox?.center ?: floatArrayOf(0f, 0f, 0f)
-
-        camera.lookAt(
-            eyeX.toDouble(), eyeY.toDouble(), eyeZ.toDouble(),
-            center[0].toDouble(), center[1].toDouble(), center[2].toDouble(),
-            0.0, 1.0, 0.0
+        cameraController.animateRotateAndZoom(
+            toYaw = targetAngle,
+            toRadius = 9.0f,
+            durationMs = 500,
+            onUpdate = { updateButtonPositions() }
         )
     }
 
     // Stop rendering animation
     private fun stopAnimationLoop() {
         isAnimationPlaying = false
+        isReversePlaying = false
+        sideMirrorOpenState = false
+        fuelDoorOpenState = false
+        windowOpenState = false
+        headLightOpenState = false
+        trunkOpenState = false
         if (::choreographer.isInitialized) {
             choreographer.removeFrameCallback(frameCallback)
         }
@@ -620,29 +862,24 @@ class MainActivity : AppCompatActivity() {
             distanceX: Float,
             distanceY: Float
         ): Boolean {
-            // 회전 처리
-            currentAngle -= distanceX * 0.2f
-            currentPitch -= distanceY * 0.1f
-            currentPitch = currentPitch.coerceIn(0f, 60f)
-
-            updateCameraWithAngle(currentAngle, currentPitch)
+            // rotation processing
+            cameraController.rotateBy(
+                deltaYaw = -distanceX * 0.2f,
+                deltaPitch = -distanceY * 0.1f
+            )
+            updateButtonPositions()
             return true
         }
-
-        override fun onDoubleTap(e: MotionEvent): Boolean {
-            // 더블탭 시 확대/축소 토글 예시
-            if (radius > 5f) zoomIn() else zoomOut()
-            return true
-        }
-
     }
 
 
     inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val scaleFactor = detector.scaleFactor
-            radius = (radius / scaleFactor).coerceIn(1.5f, 30f)
-            updateCameraWithAngle(currentAngle)
+            val scale = detector.scaleFactor
+            cameraController.zoomBy(
+                deltaRadius = (1f - scale) * 5f
+            )
+            updateButtonPositions()
             return true
         }
     }

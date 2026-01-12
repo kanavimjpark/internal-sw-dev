@@ -2,7 +2,6 @@
 package com.example.a3dmodelsample.retrofit
 
 import android.util.Log
-import com.example.a3dmodelsample.retrofit.NewsApiService
 import com.example.a3dmodelsample.retrofit.data.NewsResponse
 
 class NewsRepository(

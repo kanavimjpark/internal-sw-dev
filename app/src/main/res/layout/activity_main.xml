@@ -23,6 +23,59 @@
             android:layout_height="match_parent" />
     </FrameLayout>
 
+    <LinearLayout
+        android:id="@+id/lv_click"
+        android:layout_width="500dp"
+        android:layout_height="500dp"
+        android:backgroundTint="@color/black_10a"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/lv_widget"/>
+
+    <LinearLayout
+        android:id="@+id/lv_3d_setting_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="invisible"
+        android:layout_marginStart="@dimen/dimen_24"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/lv_widget">
+        <Button
+            android:id="@+id/btn_head_light"
+            android:layout_marginBottom="@dimen/dimen_21"
+            android:background="@drawable/home_three_d_button"
+            android:layout_width="298dp"
+            android:layout_height="128dp"
+            android:text="Headlight"/>
+
+        <Button
+            android:id="@+id/btn_all_window"
+            android:layout_marginBottom="@dimen/dimen_21"
+            android:background="@drawable/home_three_d_button"
+            android:layout_width="298dp"
+            android:layout_height="128dp"
+            android:text="all Window"/>
+
+        <Button
+            android:id="@+id/btn_side_mirror"
+            android:layout_marginBottom="@dimen/dimen_21"
+            android:background="@drawable/home_three_d_button"
+            android:layout_width="298dp"
+            android:layout_height="128dp"
+            android:text="Sidemirror"/>
+
+        <Button
+            android:id="@+id/btn_fuel_door"
+            android:background="@drawable/home_three_d_button"
+            android:layout_width="298dp"
+            android:layout_height="128dp"
+            android:text="Fuel door" />
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/lv_widget"

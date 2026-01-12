@@ -10,4 +10,7 @@ object RetrofitClient {
 
 //    fun createWeatherApi(): WeatherApiService =
 //        WeatherApiClient.create()
+
+    fun createStockApi(accessKey: String): AlphaVantageApiService =
+        AlphaApiClient.create(accessKey)
 }

@@ -34,3 +34,20 @@ enum class Index(val type: Int) {
     HEADLIGHT3(8),
     HEADLIGHT4(9)
 }
+
+enum class SeatIndex(val type: Int) {
+
+    // 좌석 전체 이동
+    SEAT_SLIDE_MIDDLE_TO_BACK(4),
+    SEAT_SLIDE_BACK_TO_MIDDLE(1),
+    SEAT_SLIDE_MIDDLE_TO_FRONT(3),
+    SEAT_SLIDE_FRONT_TO_MIDDLE(2),
+
+// 등판 각도
+    SEAT_RECLINE_MIDDLE_TO_BACK(7),
+    SEAT_RECLINE_BACK_TO_MIDDLE(8),
+    SEAT_RECLINE_MIDDLE_TO_FRONT(5),
+    SEAT_RECLINE_FRONT_TO_MIDDLE(6)
+
+
+}

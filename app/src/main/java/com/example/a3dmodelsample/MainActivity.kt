@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     // Filament ModelViewer & Choreographer
     private lateinit var choreographer: Choreographer
     private lateinit var modelViewer: ModelViewer
+    private var filamentInitialized = false
     private lateinit var tickerWsClient: TickerWsClient
 
     //3D
@@ -158,12 +159,17 @@ class MainActivity : AppCompatActivity() {
                             isAnimationPlaying = false
                             updateBoneMatrices()
                         }
-                        if (!modelAnimEndFired) {
-                            modelAnimEndFired = true
-                            val next = pendingModelAction
-                            pendingModelAction = null
-                            next?.invoke()
-                        }else modelAnimEndFired = false
+                        if (!isAnimationPlaying) {
+                            // To run only once
+                            if (!modelAnimEndFired) {
+                                modelAnimEndFired = true
+                                val next = pendingModelAction
+                                pendingModelAction = null
+                                next?.invoke()
+                            }
+                        } else {
+                            modelAnimEndFired = false
+                        }
                     }
                     else if (multiAnimationIndex.isNotEmpty()) {
                         val maxDuration = multiAnimationIndex.maxOfOrNull { getAnimationDuration(it) } ?: 0f
@@ -261,6 +267,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (::choreographer.isInitialized) {
+            choreographer.postFrameCallback (frameCallback)
+        }
     }
 
     override fun onPause() {
@@ -270,13 +279,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        destroyFilament()
         tickerWsClient.close()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopAnimationLoop()
+        destroyFilament()
     }
 
     private fun setupViewModel() {
@@ -587,16 +595,26 @@ class MainActivity : AppCompatActivity() {
 
         surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
+                Log.d("mjpark", "surfaceCreated")
                 initModelViewer() // 이 안에서 Filament 엔진 및 GLB 로딩 시작
             }
-            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-            override fun surfaceDestroyed(holder: SurfaceHolder) {}
+            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+                Log.d("mjpark", "surfaceChanged")
+            }
+            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                Log.d("mjpark", "surfaceDestroyed")
+            }
         })
     }
 
     // Initialize ModelViewer and environment
     @SuppressLint("ClickableViewAccessibility")
     private fun initModelViewer() {
+        if (filamentInitialized) {
+            choreographer.postFrameCallback(frameCallback)
+            return
+        }
+        filamentInitialized = true
         choreographer = Choreographer.getInstance()
 
         modelViewer = ModelViewer(surfaceView)

@@ -1,14 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fl_surface_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".RadioFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <SurfaceView
+        android:id="@+id/surfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="match_parent"/>
+    
+    <LinearLayout
+        android:layout_width="570dp"
+        android:layout_height="102dp"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_play_left"
+            android:layout_width="102dp"
+            android:layout_height="102dp"
+            android:layout_marginEnd="43dp"
+            android:background="@drawable/button_background_8radius"
+            android:src="@drawable/arrow_left_darkmode"/>
+        <com.google.android.material.slider.RangeSlider
+            android:layout_width="280dp"
+            android:layout_height="2dp"
+            android:layout_marginVertical="25dp"/>
+
+
+        <ImageButton
+            android:id="@+id/btn_play_right"
+            android:layout_width="102dp"
+            android:layout_height="102dp"
+            android:layout_marginStart="43dp"
+            android:background="@drawable/button_background_8radius"
+            android:src="@drawable/arrow_right_darkmode"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="102dp"
+        android:layout_height="564dp"
+        android:orientation="vertical"
+        android:layout_marginStart="1070dp">
+
+        <ImageButton
+            android:id="@+id/btn_play_up"
+            android:layout_width="102dp"
+            android:layout_height="102dp"
+            android:layout_marginEnd="43dp"
+            android:background="@drawable/button_background_8radius"
+            android:src="@drawable/arrow_up_darkmode"
+            android:layout_marginBottom="100dp"/>
+
+
+        <ImageButton
+            android:id="@+id/btn_play_down"
+            android:layout_width="102dp"
+            android:layout_height="102dp"
+
+            android:background="@drawable/button_background_8radius"
+            android:src="@drawable/arrow_down_darkmode"/>
+
+    </LinearLayout>
 
 </FrameLayout>

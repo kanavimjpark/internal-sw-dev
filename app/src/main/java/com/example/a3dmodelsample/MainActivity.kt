@@ -330,14 +330,14 @@ class MainActivity : AppCompatActivity() {
 
         mainViewModel.loadWeather("Seoul,KR")
 
-        mainViewModel.loadNews("us")
+//        mainViewModel.loadNews("us")
 
         mainViewModel.weatherLiveData.observe(this, Observer {weather ->
             Log.d("MainActivity", "🌤 Weather Temp = ${weather.main?.temp}")
         })
-        mainViewModel.newsLiveData.observe(this, Observer { news ->
-            Log.d("MainActivity", "📰 Top Headline = ${news.articles?.firstOrNull()?.title}")
-        })
+//        mainViewModel.newsLiveData.observe(this, Observer { news ->
+//            Log.d("MainActivity", "📰 Top Headline = ${news.articles?.firstOrNull()?.title}")
+//        })
         mainViewModel.getETFData()
         mainViewModel.etfData.observe(this) { list ->
             Log.d("MainActivity", "ETF size = ${list.size}")
@@ -452,7 +452,7 @@ class MainActivity : AppCompatActivity() {
                                 Index.TRUNK_CLOSE3.type
                             )
                         )
-                        btnTrunk.isSelected = false
+                        isSelected = false
                         setImageResource(R.drawable.trunk_normal)
                     } else {
                         // 열기
@@ -463,7 +463,7 @@ class MainActivity : AppCompatActivity() {
                                 Index.TRUNK_OPEN3.type
                             )
                         )
-                        btnTrunk.isSelected = true
+                        isSelected = true
                         setImageResource(R.drawable.trunk_selected)
                     }
 

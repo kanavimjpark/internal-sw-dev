@@ -65,7 +65,7 @@ class MainViewModel(
     fun loadThreeHourStepWeather(){
         viewModelScope.launch {
             try {
-                val forecast = weatherRepo.getThreeHourForecastByCity("Seoul,KR")
+                val forecast = weatherRepo.getThreeHourForecastByCity("New York,US")
                 threeHourStepWeatherLiveData.postValue(forecast)
             } catch (e: Exception) {
                 errorLiveData.postValue("Weather error: ${e.message}")
@@ -76,7 +76,7 @@ class MainViewModel(
     fun getWeekWeather(){
         viewModelScope.launch {
             try {
-                val result = weatherRepo.getArchiveWeather(37.55, 127.0)
+                val result = weatherRepo.getArchiveWeather(40.7, -74.0)
                 weekWeather.postValue(result)
             } catch (e: Exception) {
                 Log.e("Weather", "Unknown error", e)

@@ -61,8 +61,8 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
             val animator = modelViewer.animator
             if (animator != null) {
                 // 1) update positions by hold direction
-                if (slideDir != 0) slidePos = updatePosByHold(slidePos, slideDir, dt, ::pickSlideDuration)
-                if (reclineDir != 0) reclinePos = updatePosByHold(reclinePos, reclineDir, dt, ::pickReclineDuration)
+                if (slideDir != 0) slidePos = updatePosByHold(slidePos, slideDir, dt, ::pickSlideDuration, 0.4f)
+                if (reclineDir != 0) reclinePos = updatePosByHold(reclinePos, reclineDir, dt, ::pickReclineDuration,0.1f)
 
                 // 2) apply both poses every frame (so both states are "locked")
                 applySlidePose(animator, slidePos)
@@ -160,6 +160,10 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
         destroyFilament()
         filamentInitialized = false
     }
@@ -301,6 +305,19 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
         val deltaPos = (dt / dur) * dir
         return (pos + deltaPos).coerceIn(0f, 2f)
     }
+
+    private fun updatePosByHold(
+        pos: Float,
+        dir: Int,
+        dt: Float,
+        durationPicker: (Float, Int) -> Float,
+        speed: Float
+    ): Float {
+        val dur = durationPicker(pos, dir).coerceAtLeast(1e-6f)
+        val deltaPos = (dt / dur) * dir * speed
+        return (pos + deltaPos).coerceIn(0f, 2f)
+    }
+
 
     // ---- Slide duration pick ----
     private fun pickSlideDuration(pos: Float, dir: Int): Float {

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="564dp"
+    android:layout_height="92dp"
+    android:clipToOutline="true"
+    android:paddingStart="40dp"
+    android:paddingEnd="@dimen/dimen_56">
+
+    <TextView
+        android:id="@+id/tv_stock_name"
+        android:layout_width="226dp"
+        android:layout_height="45dp"
+        android:textSize="45sp"
+        android:maxLines="2"
+        android:text="Dow jones"
+        android:textColor="@color/c_1D1D1D"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <TextView
+        android:id="@+id/tv_current_price"
+        android:layout_width="100dp"
+        android:layout_height="39dp"
+        android:layout_marginStart="16dp"
+        android:gravity="center_vertical"
+        android:textColor="@color/c_555555"
+        android:textSize="39sp"
+        android:text="$135"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tv_stock_name"/>
+
+    <TextView
+        android:id="@+id/tv_percentage"
+        android:layout_width="119dp"
+        android:layout_height="39dp"
+        android:textColor="#FF5353"
+        android:textSize="39sp"
+        android:text="+35.48%"
+        android:layout_marginStart="16dp"
+        app:layout_goneMarginStart="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tv_current_price" />
+</androidx.constraintlayout.widget.ConstraintLayout>

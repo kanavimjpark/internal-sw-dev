@@ -11,7 +11,7 @@ class NewsRepository(
 
     // Fetch top headlines (by country / optional category)
     suspend fun fetchTopHeadlines(
-        country: String = "us",
+        country: String = "kr",
         category: String? = null,
         page: Int? = null,
         pageSize: Int? = null

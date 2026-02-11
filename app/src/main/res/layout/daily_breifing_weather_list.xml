@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="@dimen/dimen_88"
+    android:layout_height="165dp">
+
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="@dimen/dimen_88"
+        android:layout_height="45dp"
+        android:gravity="center_vertical|center"
+        android:text="NOW"
+        android:textColor="@color/c_1D1D1D"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/ivWeather"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTime"
+        app:layout_constraintBottom_toTopOf="@+id/tvTemp"/>
+
+    <!-- 온도 텍스트 -->
+    <TextView
+        android:id="@+id/tvTemp"
+        android:layout_width="88dp"
+        android:layout_height="42dp"
+        android:text="21°"
+        android:textColor="@color/c_1D1D1D"
+        android:textSize="@dimen/string_30sp"
+        android:gravity="center_horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -41,6 +41,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".MyCarBroadcastReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.kanavi.heyari.ACTION_OPEN" />
+                <action android:name="com.kanavi.heyari.ACTION_CLOSE" />
+                <action android:name="com.kanavi.heyari.ACTION_ON" />
+                <action android:name="com.kanavi.heyari.ACTION_OFF" />
+                <action android:name="com.kanavi.heyari.ACTION_DOWN" />
+                <action android:name="com.kanavi.heyari.ACTION_UP" />
+                <action android:name="com.kanavi.heyari.ACTION_ROTATE" />
+                <action android:name="com.kanavi.heyari.ACTION_ZOOMIN" />
+                <action android:name="com.kanavi.heyari.ACTION_ZOOMOUT" />
+                <action android:name="com.kanavi.heyari.ACTION_UNKNOWN" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

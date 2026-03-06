@@ -1,11 +1,9 @@
 package com.example.a3dmodelsample
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.content.res.Resources
-import android.opengl.Matrix
 import android.util.Log
 import android.view.Choreographer
 import android.view.GestureDetector
@@ -14,7 +12,6 @@ import android.view.ScaleGestureDetector
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -24,7 +21,6 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.animation.doOnEnd
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
@@ -42,16 +38,16 @@ import com.google.android.filament.utils.ModelViewer
 import java.nio.ByteBuffer
 import com.google.android.filament.Camera
 import com.google.android.filament.EntityManager
-import com.google.android.filament.utils.Mat4
-import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.sin
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MyCarBroadcastReceiver.CommandListener {
 
     private lateinit var mainViewModel: MainViewModel
-
+    private var filamentStartTime = 0L
+    private var firstFrameLogged = false
     // UI components
     private lateinit var surfaceView: SurfaceView
     //for testing stock info
@@ -231,6 +227,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             modelViewer.render(currentTime)
+            if (!firstFrameLogged) {
+                val end = System.currentTimeMillis()
+                Log.d("FILAMENT_LOAD", "Filament full load time = ${end - filamentStartTime} ms")
+                firstFrameLogged = true
+            }
         }
     }
 
@@ -238,6 +239,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        firstFrameLogged = false
         setContentView(R.layout.activity_main)
         setupSystemInsets()
         setupViewModel()
@@ -267,6 +269,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        MyCarBroadcastReceiver.listener = this
         if (::choreographer.isInitialized) {
             choreographer.postFrameCallback (frameCallback)
         }
@@ -274,6 +277,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        if (MyCarBroadcastReceiver.listener === this) {
+            MyCarBroadcastReceiver.listener = null
+        }
         stopAnimationLoop()
     }
 
@@ -324,7 +330,7 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         tickerWsClient = TickerWsClient("d48prghr01qnpsnov7j0d48prghr01qnpsnov7jg") { symbol, price, ts ->
             runOnUiThread {
-                tvTitle.text = "$symbol : $price"
+//                tvTitle.text = "$symbol : $price"
             }
         }
 
@@ -610,6 +616,8 @@ class MainActivity : AppCompatActivity() {
     // Initialize ModelViewer and environment
     @SuppressLint("ClickableViewAccessibility")
     private fun initModelViewer() {
+        filamentStartTime = System.currentTimeMillis()
+        Log.d("FILAMENT_LOAD", "Filament init start")
         if (filamentInitialized) {
             choreographer.postFrameCallback(frameCallback)
             return
@@ -669,8 +677,11 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
     private fun loadGLBFromBuffer(buffer: ByteBuffer) {
+        val start = System.currentTimeMillis()
         modelViewer.loadModelGlb(buffer)
 
+        val end = System.currentTimeMillis()
+        Log.d("3D_LOAD", "GLB load time = ${end - start} ms")
         val asset = modelViewer.asset ?: return
         Log.d("mjpark", "Loaded entities: ${asset.entities.size}")
 
@@ -716,6 +727,45 @@ class MainActivity : AppCompatActivity() {
         Log.d("mjpark", "toggleDoor: $id -> ${doorState[id]}")
     }
 
+    private fun openDoorIfNeeded(
+        id: String,
+        btn: ImageButton,
+        openAnimIndex: Int,
+        openIconRes: Int
+    ) {
+        val isOpen = doorState[id] == true
+        if (isOpen) {
+            Log.d("MainActivity", "Door already open: $id")
+            return
+        }
+
+        playAnimation(openAnimIndex)
+        btn.isSelected = true
+        btn.setImageResource(openIconRes)
+        doorState[id] = true
+
+        Log.d("MainActivity", "openDoorIfNeeded: $id -> true")
+    }
+
+    private fun closeDoorIfNeeded(
+        id: String,
+        btn: ImageButton,
+        closeAnimIndex: Int,
+        closeIconRes: Int
+    ) {
+        val isOpen = doorState[id] == true
+        if (!isOpen) {
+            Log.d("MainActivity", "Door already closed: $id")
+            return
+        }
+
+        playAnimation(closeAnimIndex)
+        btn.isSelected = false
+        btn.setImageResource(closeIconRes)
+        doorState[id] = false
+
+        Log.d("MainActivity", "closeDoorIfNeeded: $id -> false")
+    }
 
     private fun getButtonById(id: String): ImageButton? = when (id) {
         "door_front_left" -> btnDoorFrontLeft
@@ -724,6 +774,292 @@ class MainActivity : AppCompatActivity() {
         "door_back_right_obj001" -> btnDoorRearRight
         "trunk" -> btnTrunk
         else -> null
+    }
+
+    private fun handleOpenCommand(position: String?) {
+        when (position) {
+            "DRIVER" -> openDoorIfNeeded(
+                id = "door_front_left",
+                btn = btnDoorFrontLeft,
+                openAnimIndex = Index.DRIVER_DOOR_OPEN.type,
+                openIconRes = R.drawable.door_selected
+            )
+
+            "PASSENGER" -> openDoorIfNeeded(
+                id = "door_front_right",
+                btn = btnDoorFrontRight,
+                openAnimIndex = Index.PASSENGER_DOOR_OPEN.type,
+                openIconRes = R.drawable.door_selected
+            )
+
+            "REAR_LEFT" -> openDoorIfNeeded(
+                id = "door_back_left_obj001",
+                btn = btnDoorRearLeft,
+                openAnimIndex = Index.REAR_LEFT_DOOR_OPEN.type,
+                openIconRes = R.drawable.door_selected
+            )
+
+            "REAR_RIGHT" -> openDoorIfNeeded(
+                id = "door_back_right_obj001",
+                btn = btnDoorRearRight,
+                openAnimIndex = Index.REAR_RIGHT_DOOR_OPEN.type,
+                openIconRes = R.drawable.door_selected
+            )
+
+            "ALL" -> {
+                handleOpenCommand("DRIVER")
+                handleOpenCommand("PASSENGER")
+                handleOpenCommand("REAR_LEFT")
+                handleOpenCommand("REAR_RIGHT")
+            }
+
+            "ALL_WINDOW" -> {
+                if (!windowOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_DOWN.type,
+                            Index.PASSENGER_WINDOW_DOWN.type,
+                            Index.REAR_LEFT_WINDOW_DOWN.type,
+                            Index.REAR_RIGHT_WINDOW_DOWN.type
+                        ),
+                        reverse = false
+                    )
+                    windowOpenState = true
+                }
+            }
+
+            "TRUNK" -> {
+                if (!trunkOpenState) {
+                    playTrunkAnimations(
+                        listOf(
+                            Index.TRUNK_OPEN1.type,
+                            Index.TRUNK_OPEN2.type,
+                            Index.TRUNK_OPEN3.type
+                        )
+                    )
+                    trunkOpenState = true
+                    btnTrunk.isSelected = true
+                    btnTrunk.setImageResource(R.drawable.trunk_selected)
+                }
+            }
+
+            "OIL" -> {
+                if (!fuelDoorOpenState) {
+                    playAnimation(Index.OIL_DOOR_OPEN.type)
+                    fuelDoorOpenState = true
+                }
+            }
+
+            "SIDE_MIRROR" -> {
+                if (!sideMirrorOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.SIDE_MIRROR_LEFT_OPEN.type,
+                            Index.SIDE_MIRROR_RIGHT_OPEN.type
+                        ),
+                        reverse = false
+                    )
+                    sideMirrorOpenState = true
+                    onFeatureButtonClicked(Feature.SIDE_MIRROR)
+                }
+            }
+
+            else -> Log.w("MainActivity", "Unhandled OPEN position=$position")
+        }
+    }
+
+
+    private fun handleCloseCommand(position: String?) {
+        when (position) {
+            "DRIVER" -> closeDoorIfNeeded(
+                id = "door_front_left",
+                btn = btnDoorFrontLeft,
+                closeAnimIndex = Index.DRIVER_DOOR_CLOSE.type,
+                closeIconRes = R.drawable.door_normal
+            )
+
+            "PASSENGER" -> closeDoorIfNeeded(
+                id = "door_front_right",
+                btn = btnDoorFrontRight,
+                closeAnimIndex = Index.PASSENGER_DOOR_CLOSE.type,
+                closeIconRes = R.drawable.door_normal
+            )
+
+            "REAR_LEFT" -> closeDoorIfNeeded(
+                id = "door_back_left_obj001",
+                btn = btnDoorRearLeft,
+                closeAnimIndex = Index.REAR_LEFT_DOOR_CLOSE.type,
+                closeIconRes = R.drawable.door_normal
+            )
+
+            "REAR_RIGHT" -> closeDoorIfNeeded(
+                id = "door_back_right_obj001",
+                btn = btnDoorRearRight,
+                closeAnimIndex = Index.REAR_RIGHT_DOOR_CLOSE.type,
+                closeIconRes = R.drawable.door_normal
+            )
+
+            "ALL" -> {
+                handleCloseCommand("DRIVER")
+                handleCloseCommand("PASSENGER")
+                handleCloseCommand("REAR_LEFT")
+                handleCloseCommand("REAR_RIGHT")
+            }
+
+            "ALL_WINDOW" -> {
+                if (!windowOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_DOWN.type,
+                            Index.PASSENGER_WINDOW_DOWN.type,
+                            Index.REAR_LEFT_WINDOW_DOWN.type,
+                            Index.REAR_RIGHT_WINDOW_DOWN.type
+                        ),
+                        reverse = false
+                    )
+                    windowOpenState = true
+                }
+            }
+
+            "TRUNK" -> {
+                if (trunkOpenState) {
+                    playTrunkAnimations(
+                        listOf(
+                            Index.TRUNK_CLOSE1.type,
+                            Index.TRUNK_CLOSE2.type,
+                            Index.TRUNK_CLOSE3.type
+                        )
+                    )
+                    trunkOpenState = false
+                    btnTrunk.isSelected = false
+                    btnTrunk.setImageResource(R.drawable.trunk_normal)
+                }
+            }
+
+            "OIL" -> {
+                if (fuelDoorOpenState) {
+                    playAnimation(Index.OIL_DOOR_CLOSE.type)
+                    fuelDoorOpenState = false
+                }
+            }
+
+            "SIDE_MIRROR" -> {
+                if (sideMirrorOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.SIDE_MIRROR_LEFT_CLOSE.type,
+                            Index.SIDE_MIRROR_RIGHT_CLOSE.type
+                        ),
+                        reverse = false
+                    )
+                    sideMirrorOpenState = false
+                    onFeatureButtonClicked(Feature.SIDE_MIRROR)
+                }
+            }
+
+            else -> Log.w("MainActivity", "Unhandled CLOSE position=$position")
+        }
+    }
+
+    private fun handleOnCommand(position: String?) {
+        when (position) {
+            "HEAD_LIGHT" -> {
+                if (!headLightOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.HEADLIGHT1.type,
+                            Index.HEADLIGHT2.type,
+                            Index.HEADLIGHT3.type,
+                            Index.HEADLIGHT4.type
+                        ),
+                        reverse = false
+                    )
+                    headLightOpenState = true
+                    onFeatureButtonClicked(Feature.HEADLIGHT)
+                }
+            }
+            else -> Log.w("MainActivity", "Unhandled ON position=$position")
+        }
+    }
+
+    private fun handleOffCommand(position: String?) {
+        when (position) {
+            "HEAD_LIGHT" -> {
+                if (headLightOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.HEADLIGHT1.type,
+                            Index.HEADLIGHT2.type,
+                            Index.HEADLIGHT3.type,
+                            Index.HEADLIGHT4.type
+                        ),
+                        reverse = true
+                    )
+                    headLightOpenState = false
+                    onFeatureButtonClicked(Feature.HEADLIGHT)
+                }
+            }
+            else -> Log.w("MainActivity", "Unhandled OFF position=$position")
+        }
+    }
+
+    private fun handleDownCommand(position: String?) {
+        when (position) {
+            "ALL_WINDOW" -> {
+                if (!windowOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_DOWN.type,
+                            Index.PASSENGER_WINDOW_DOWN.type,
+                            Index.REAR_LEFT_WINDOW_DOWN.type,
+                            Index.REAR_RIGHT_WINDOW_DOWN.type
+                        ),
+                        reverse = false
+                    )
+                    windowOpenState = true
+                }
+            }
+            else -> Log.w("MainActivity", "Unhandled DOWN position=$position")
+        }
+    }
+
+    private fun handleUpCommand(position: String?) {
+        when (position) {
+            "ALL_WINDOW" -> {
+                if (windowOpenState) {
+                    playSeveralAnimations(
+                        listOf(
+                            Index.DRIVER_WINDOW_UP.type,
+                            Index.PASSENGER_WINDOW_UP.type,
+                            Index.REAR_LEFT_WINDOW_UP.type,
+                            Index.REAR_RIGHT_WINDOW_UP.type
+                        ),
+                        reverse = false
+                    )
+                    windowOpenState = false
+                }
+            }
+            else -> Log.w("MainActivity", "Unhandled UP position=$position")
+        }
+    }
+
+    private fun handleRotateCommand(position: String?) {
+        when (position) {
+            "HEAD_LIGHT" -> onFeatureButtonClicked(Feature.HEADLIGHT)
+            "SIDE_MIRROR" -> onFeatureButtonClicked(Feature.SIDE_MIRROR)
+            "OIL" -> onFeatureButtonClicked(Feature.FUEL_DOOR)
+            else -> Log.w("MainActivity", "Unhandled ROTATE position=$position")
+        }
+    }
+
+    private fun handleZoomInCommand() {
+        cameraController.zoomBy(-0.5f)
+        updateButtonPositions()
+    }
+
+    private fun handleZoomOutCommand() {
+        cameraController.zoomBy(0.5f)
+        updateButtonPositions()
     }
 
     private fun updateButtonPositions() {
@@ -899,6 +1235,36 @@ class MainActivity : AppCompatActivity() {
             )
             updateButtonPositions()
             return true
+        }
+    }
+
+    override fun onCommandReceived(action: String?, position: String?) {
+        Log.d("MainActivity", "onCommandReceived action=$action, position=$position")
+
+        if (!::modelViewer.isInitialized) {
+            Log.w("MainActivity", "ModelViewer not initialized yet")
+            return
+        }
+
+        runOnUiThread {
+            handleBroadcastCommand(action, position)
+        }
+    }
+
+    private fun handleBroadcastCommand(action: String?, position: String?) {
+        runOrQueueModelAction {
+            when (action) {
+                MyCarBroadcastReceiver.ACTION_OPEN -> handleOpenCommand(position)
+                MyCarBroadcastReceiver.ACTION_CLOSE -> handleCloseCommand(position)
+                MyCarBroadcastReceiver.ACTION_ON -> handleOnCommand(position)
+                MyCarBroadcastReceiver.ACTION_OFF -> handleOffCommand(position)
+                MyCarBroadcastReceiver.ACTION_DOWN -> handleDownCommand(position)
+                MyCarBroadcastReceiver.ACTION_UP -> handleUpCommand(position)
+                MyCarBroadcastReceiver.ACTION_ROTATE -> handleRotateCommand(position)
+                MyCarBroadcastReceiver.ACTION_ZOOMIN -> handleZoomInCommand()
+                MyCarBroadcastReceiver.ACTION_ZOOMOUT -> handleZoomOutCommand()
+                else -> Log.w("MainActivity", "Unknown action=$action position=$position")
+            }
         }
     }
 }
